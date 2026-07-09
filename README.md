@@ -58,6 +58,24 @@ Necesitas tener **Python 3.10 o superior** instalado.
 
 ---
 
+## 🖥️ La forma más fácil de verlo: el panel visual
+
+Si no quieres tocar archivos, usa el **panel web interactivo**. Ajustas todo con
+deslizadores y botones, y ves los gráficos al momento en tu navegador:
+
+```bash
+streamlit run dashboard.py
+```
+
+Se abre solo en el navegador. A la izquierda eliges par, timeframe, medias y
+riesgo; pulsas **Ejecutar backtest** y ves la curva de capital, el precio con
+las compras/ventas marcadas y las estadísticas. (El panel es solo para
+backtesting, sin riesgo.)
+
+> ¿Prefieres la terminal? Sigue con el Paso 1. Ambos caminos hacen lo mismo.
+
+---
+
 ## 🧪 Paso 1: Backtest (sin riesgo, sin claves)
 
 Prueba si la estrategia habría funcionado con datos históricos. **No necesita
@@ -74,6 +92,9 @@ Ejecuta:
 ```bash
 python run_backtest.py
 ```
+
+Además del informe en pantalla, se genera un **informe visual en HTML**
+(`results/informe.html`) que puedes abrir con doble clic en el navegador.
 
 Verás un informe con:
 - **Rendimiento (%)**: cuánto habrías ganado o perdido.
@@ -180,9 +201,11 @@ operación) hasta que confíes plenamente en el comportamiento real.
 ```
 config.yaml          <- LO ÚNICO que necesitas tocar
 .env                 <- tus claves (créalo desde .env.example)
-run_backtest.py      <- ejecuta la prueba histórica
+dashboard.py         <- panel web visual (streamlit run dashboard.py)
+run_backtest.py      <- ejecuta la prueba histórica (+ informe HTML)
 run_bot.py           <- ejecuta el bot en vivo (paper/live)
 src/
+  report.py          <- genera el informe visual en HTML
   config.py          <- carga y valida la configuración
   data.py            <- descarga precios de Binance
   indicators.py      <- EMA, RSI, ATR

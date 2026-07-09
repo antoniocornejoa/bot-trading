@@ -75,11 +75,16 @@ def _resolve_credentials(cfg: Config) -> None:
         cfg.use_testnet = False
         cfg.api_key = os.getenv("BINANCE_API_KEY", "")
         cfg.api_secret = os.getenv("BINANCE_API_SECRET", "")
-    else:
-        # backtest no necesita claves; paper usa testnet.
+    elif cfg.mode == "paper":
+        # paper opera en la testnet (dinero de mentira) -> claves de testnet.
         cfg.use_testnet = True
         cfg.api_key = os.getenv("BINANCE_TESTNET_API_KEY", "")
         cfg.api_secret = os.getenv("BINANCE_TESTNET_API_SECRET", "")
+    else:
+        # backtest usa datos públicos REALES (más histórico) y no necesita claves.
+        cfg.use_testnet = False
+        cfg.api_key = ""
+        cfg.api_secret = ""
 
 
 def _validate(cfg: Config) -> None:
