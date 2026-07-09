@@ -1,0 +1,19 @@
+# Claves y secretos - NUNCA subir a git
+.env
+*.key
+
+# Datos y resultados
+data/*.csv
+data/*.parquet
+results/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Sistema
+.DS_Store

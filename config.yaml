@@ -1,0 +1,54 @@
+# =============================================================
+#  CONFIGURACIÓN DEL BOT DE TRADING
+# =============================================================
+#  Este es el ÚNICO archivo que necesitas tocar para cambiar cómo
+#  se comporta el bot. No hace falta saber programar: solo cambia
+#  los valores de la derecha.
+# =============================================================
+
+# --- MODO DE FUNCIONAMIENTO -----------------------------------
+# Elige uno:
+#   backtest -> Prueba la estrategia con datos históricos. SIN riesgo.
+#   paper    -> Opera en tiempo real pero con dinero de MENTIRA (testnet). SIN riesgo.
+#   live     -> Opera con dinero REAL. Solo cuando ya hayas probado mucho.
+mode: backtest
+
+# Seguro anti-accidentes: para operar con dinero REAL, además de poner
+# mode: live, tienes que cambiar esto a true. Si no, el bot se niega a arrancar.
+i_understand_live_risk: false
+
+# --- MERCADO --------------------------------------------------
+exchange: binance
+symbol: BTC/USDT        # Par a operar (ej: BTC/USDT, ETH/USDT)
+timeframe: 1h           # Vela: 1m, 5m, 15m, 1h, 4h, 1d
+                        # Consejo: timeframes más largos = menos ruido y menos comisiones.
+
+# --- ESTRATEGIA (señales técnicas) ---------------------------
+strategy:
+  ema_fast: 12          # Media móvil rápida
+  ema_slow: 26          # Media móvil lenta (compra cuando la rápida cruza por encima)
+  rsi_period: 14        # Periodo del RSI
+  rsi_max_entry: 70     # No comprar si el RSI ya está por encima de esto (sobrecomprado)
+  atr_period: 14        # Para calcular el stop-loss según la volatilidad
+
+# --- GESTIÓN DE RIESGO (lo más importante) -------------------
+risk:
+  capital_inicial: 1000        # Solo para backtest/paper: capital simulado en USDT
+  riesgo_por_operacion_pct: 1.0  # % del capital que arriesgas en cada operación (1% = conservador)
+  stop_loss_atr_mult: 2.0      # Stop-loss a X veces el ATR por debajo de la entrada
+  take_profit_atr_mult: 3.0    # Objetivo de beneficio a X veces el ATR
+  limite_perdida_diaria_pct: 3.0 # Si pierdes este % en un día, el bot para hasta el día siguiente
+  max_posiciones: 1            # Cuántas operaciones abiertas a la vez (1 = simple y seguro)
+
+# --- COSTES (para que el backtest sea realista) --------------
+costes:
+  comision_pct: 0.1     # Comisión de Binance spot (0.1% por operación)
+  slippage_pct: 0.05    # Deslizamiento estimado (el precio se mueve al ejecutar)
+
+# --- BACKTEST -------------------------------------------------
+backtest:
+  velas_historicas: 2000  # Cuántas velas descargar para la prueba histórica
+
+# --- BOT EN VIVO ----------------------------------------------
+live_bot:
+  segundos_entre_ciclos: 60  # Cada cuánto revisa el mercado (en paper/live)
