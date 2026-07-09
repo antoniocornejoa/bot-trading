@@ -102,6 +102,44 @@ def test_backtest_corre():
     assert isinstance(res.rendimiento_pct, float)
 
 
+def test_contabilidad_coherente():
+    """Regresión: contabilidad de caja correcta (spot, sin apalancamiento).
+
+    Bugs que este test detecta:
+      - Vender más barato de lo comprado NO puede dar beneficio.
+      - Vender más caro NO puede dar pérdida grande.
+      - El capital no puede 'explotar' por no descontar el coste de compra.
+    """
+    df = _velas_sinteticas(n=1500, seed=11)
+
+    class Cfg:
+        strategy = {"ema_fast": 12, "ema_slow": 26, "rsi_period": 14,
+                    "rsi_max_entry": 70, "atr_period": 14}
+        risk = {"capital_inicial": 1000, "riesgo_por_operacion_pct": 1.0,
+                "stop_loss_atr_mult": 2.0, "take_profit_atr_mult": 3.0,
+                "limite_perdida_diaria_pct": 3.0, "max_posiciones": 1}
+        costes = {"comision_pct": 0.1, "slippage_pct": 0.05}
+
+    res = ejecutar_backtest(df, Cfg())
+
+    for op in res.operaciones:
+        if op.salida_precio < op.entrada_precio:
+            assert op.pnl < 0, (
+                f"Vendió a {op.salida_precio} tras comprar a {op.entrada_precio} "
+                f"pero el PnL es {op.pnl} (debería ser negativo)."
+            )
+        # Ningún trade puede ganar/perder más que el valor de la posición.
+        valor_posicion = op.entrada_precio * op.cantidad
+        assert abs(op.pnl) <= valor_posicion + 1e-6
+
+    # En spot sin apalancamiento, cada trade arriesga ~1% del capital: el
+    # capital no puede multiplicarse por miles. Cota de cordura muy holgada.
+    assert res.equity_final < res.equity_inicial * 5
+    # La suma de PnL debe cuadrar con el cambio de capital (contabilidad cerrada).
+    suma_pnl = sum(o.pnl for o in res.operaciones)
+    assert abs(suma_pnl - (res.equity_final - res.equity_inicial)) < 1e-3
+
+
 if __name__ == "__main__":
     for nombre, fn in list(globals().items()):
         if nombre.startswith("test_") and callable(fn):

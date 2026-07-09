@@ -76,7 +76,9 @@ def ejecutar_backtest(df: pd.DataFrame, cfg) -> ResultadoBacktest:
     """Corre la simulación completa y devuelve las métricas."""
     datos = strategy.generate_signals(df, cfg.strategy)
 
-    equity = float(cfg.risk["capital_inicial"])
+    # 'cash' es el dinero libre en USDT. Cuando hay posición abierta, parte
+    # del capital está invertido en el activo y NO cuenta como cash.
+    cash = float(cfg.risk["capital_inicial"])
     comision = cfg.costes["comision_pct"] / 100.0
     slippage = cfg.costes["slippage_pct"] / 100.0
     control = risk.ControlDiario(cfg.risk["limite_perdida_diaria_pct"])
@@ -108,9 +110,9 @@ def ejecutar_backtest(df: pd.DataFrame, cfg) -> ResultadoBacktest:
                 motivo = "señal"
 
             if precio_salida is not None:
-                valor_salida = precio_salida * posicion["cantidad"]
-                coste_salida = valor_salida * comision
-                equity += valor_salida - coste_salida
+                # Vendemos el activo: ingresamos su valor menos la comisión.
+                ingreso = precio_salida * posicion["cantidad"]
+                cash += ingreso - ingreso * comision
 
                 operaciones.append(
                     Operacion(
@@ -119,7 +121,8 @@ def ejecutar_backtest(df: pd.DataFrame, cfg) -> ResultadoBacktest:
                         salida_fecha=vela.Index,
                         salida_precio=precio_salida,
                         cantidad=posicion["cantidad"],
-                        pnl=equity - posicion["equity_antes"],
+                        # cash ahora vuelve a ser todo el capital: pnl = cash - cash_antes.
+                        pnl=cash - posicion["equity_antes"],
                         motivo_salida=motivo,
                     )
                 )
@@ -127,38 +130,39 @@ def ejecutar_backtest(df: pd.DataFrame, cfg) -> ResultadoBacktest:
 
         # --- Si no hay posición, comprobar entradas ---
         if posicion is None and vela.signal == strategy.BUY:
-            if control.puede_operar(fecha, equity) and pd.notna(vela.atr):
+            if control.puede_operar(fecha, cash) and pd.notna(vela.atr):
                 precio_entrada = siguiente.open * (1 + slippage)
                 niveles = risk.calcular_niveles(
-                    precio_entrada, vela.atr, equity, cfg.risk
+                    precio_entrada, vela.atr, cash, cfg.risk
                 )
                 if niveles is not None:
-                    coste_entrada = (
-                        precio_entrada * niveles.cantidad * comision
-                    )
-                    equity_antes = equity
-                    equity -= coste_entrada  # la comisión se paga al comprar
-                    posicion = {
-                        "fecha": siguiente.Index,
-                        "entrada": precio_entrada,
-                        "stop_loss": niveles.stop_loss,
-                        "take_profit": niveles.take_profit,
-                        "cantidad": niveles.cantidad,
-                        "equity_antes": equity_antes,
-                    }
+                    coste_compra = precio_entrada * niveles.cantidad
+                    comision_compra = coste_compra * comision
+                    # No podemos gastar más cash del que tenemos (compra + comisión).
+                    if coste_compra + comision_compra <= cash:
+                        equity_antes = cash
+                        cash -= coste_compra + comision_compra
+                        posicion = {
+                            "fecha": siguiente.Index,
+                            "entrada": precio_entrada,
+                            "stop_loss": niveles.stop_loss,
+                            "take_profit": niveles.take_profit,
+                            "cantidad": niveles.cantidad,
+                            "equity_antes": equity_antes,
+                        }
 
-        # Valor de la cartera en cada momento (para la curva de equity).
-        valor_actual = equity
+        # Valor de la cartera en cada momento (cash + activo a precio de mercado).
+        valor_actual = cash
         if posicion is not None:
-            valor_actual = equity + posicion["cantidad"] * vela.close
+            valor_actual = cash + posicion["cantidad"] * vela.close
         curva.append((vela.Index, valor_actual))
 
     # Cerrar cualquier posición abierta al final con el último precio.
     if posicion is not None:
         ultimo = filas[-1]
         precio_salida = ultimo.close * (1 - slippage)
-        valor_salida = precio_salida * posicion["cantidad"]
-        equity += valor_salida - valor_salida * comision
+        ingreso = precio_salida * posicion["cantidad"]
+        cash += ingreso - ingreso * comision
         operaciones.append(
             Operacion(
                 entrada_fecha=posicion["fecha"],
@@ -166,7 +170,7 @@ def ejecutar_backtest(df: pd.DataFrame, cfg) -> ResultadoBacktest:
                 salida_fecha=ultimo.Index,
                 salida_precio=precio_salida,
                 cantidad=posicion["cantidad"],
-                pnl=equity - posicion["equity_antes"],
+                pnl=cash - posicion["equity_antes"],
                 motivo_salida="fin",
             )
         )
@@ -177,7 +181,7 @@ def ejecutar_backtest(df: pd.DataFrame, cfg) -> ResultadoBacktest:
 
     return ResultadoBacktest(
         equity_inicial=float(cfg.risk["capital_inicial"]),
-        equity_final=equity,
+        equity_final=cash,
         operaciones=operaciones,
         curva_equity=serie_equity,
     )
