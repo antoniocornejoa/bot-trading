@@ -74,6 +74,9 @@ backtesting, sin riesgo.)
 
 > ¿Prefieres la terminal? Sigue con el Paso 1. Ambos caminos hacen lo mismo.
 
+**¿Solo tienes el móvil?** Puedes desplegar este panel gratis en internet y
+abrirlo desde el teléfono. Guía: **[DESPLIEGUE_MOVIL.md](DESPLIEGUE_MOVIL.md)**.
+
 ---
 
 ## 🧪 Paso 1: Backtest (sin riesgo, sin claves)

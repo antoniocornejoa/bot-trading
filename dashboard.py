@@ -37,6 +37,13 @@ with st.sidebar:
     st.header("⚙️ Parámetros")
 
     st.subheader("Mercado")
+    fuente = st.selectbox(
+        "Fuente de datos",
+        ["Binance", "Kraken", "Datos de ejemplo (demo)"],
+        index=0,
+        help="Si Binance no funciona en tu red (p. ej. en la nube), prueba "
+             "Kraken o el modo demo (siempre funciona, datos simulados).",
+    )
     symbol = st.text_input("Par", value="BTC/USDT", help="Ej: BTC/USDT, ETH/USDT")
     timeframe = st.selectbox("Vela (timeframe)", ["15m", "1h", "4h", "1d"], index=1)
     velas = st.slider("Velas históricas", 300, 3000, 1500, step=100)
@@ -80,10 +87,12 @@ def _construir_cfg() -> SimpleNamespace:
 
 
 @st.cache_data(show_spinner=False)
-def _descargar(symbol: str, timeframe: str, velas: int) -> pd.DataFrame:
-    """Descarga velas (cacheado para no repetir la misma petición)."""
-    cfg = SimpleNamespace(use_testnet=False, api_key="", api_secret="")
-    exchange = data.crear_exchange(cfg)
+def _descargar(fuente: str, symbol: str, timeframe: str, velas: int) -> pd.DataFrame:
+    """Descarga velas según la fuente elegida (cacheado)."""
+    if fuente.startswith("Datos de ejemplo"):
+        return data.datos_demo(n=velas)
+    nombre = "kraken" if fuente == "Kraken" else "binance"
+    exchange = data.crear_exchange_publico(nombre)
     return data.descargar_velas(exchange, symbol, timeframe, limite=velas)
 
 
@@ -99,12 +108,17 @@ if ema_fast >= ema_slow:
 cfg = _construir_cfg()
 
 try:
-    with st.spinner(f"Descargando {velas} velas de {symbol}…"):
-        df = _descargar(symbol, timeframe, velas)
+    with st.spinner(f"Obteniendo {velas} velas ({fuente})…"):
+        df = _descargar(fuente, symbol, timeframe, velas)
 except Exception as e:  # noqa: BLE001
     st.error(f"No se pudieron descargar datos: {type(e).__name__}: {str(e)[:200]}")
-    st.info("Comprueba el nombre del par y que Binance no esté restringido en tu red.")
+    st.info("Prueba con **Kraken** o con **Datos de ejemplo (demo)** en la barra "
+            "lateral. El modo demo funciona siempre, sin conexión.")
     st.stop()
+
+if fuente.startswith("Datos de ejemplo"):
+    st.warning("Estás viendo **datos simulados** (demo), no precios reales. "
+               "Para resultados reales elige Binance o Kraken.")
 
 if df.empty or len(df) < 60:
     st.error("Datos insuficientes. Prueba otro par o más velas.")
