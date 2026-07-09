@@ -17,6 +17,7 @@ import ccxt
 from src import data
 from src.backtest import ejecutar_backtest
 from src.config import load_config
+from src.report import generar_informe_html
 
 
 def main() -> None:
@@ -61,6 +62,10 @@ def main() -> None:
     print(f"    Profit factor:     {res.profit_factor:.2f}")
     print(f"    Peor bajón (DD):   -{res.max_drawdown_pct:.2f} %")
     print("=" * 60)
+
+    ruta = generar_informe_html(df, res, cfg, "results/informe.html")
+    print(f"\n  📊 Informe visual generado: {ruta.resolve()}")
+    print("     Ábrelo con doble clic para ver los gráficos en el navegador.")
 
     _interpretar(res)
 

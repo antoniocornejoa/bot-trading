@@ -10,11 +10,13 @@ import numpy as np
 import pandas as pd
 
 from src.backtest import ejecutar_backtest
+from src.report import generar_informe_html
 
 
 class _Cfg:
     symbol = "BTC/USDT (datos de ejemplo)"
     timeframe = "1h"
+    mode = "demo"
     strategy = {"ema_fast": 12, "ema_slow": 26, "rsi_period": 14,
                 "rsi_max_entry": 70, "atr_period": 14}
     risk = {"capital_inicial": 1000, "riesgo_por_operacion_pct": 1.0,
@@ -64,6 +66,10 @@ def main():
         print(f"    {op.entrada_fecha.date()} compra {op.entrada_precio:8.1f} "
               f"-> vende {op.salida_precio:8.1f}  PnL {pnl:>8} USDT  ({op.motivo_salida})")
     print("=" * 60)
+
+    ruta = generar_informe_html(df, res, cfg, "results/informe_demo.html")
+    print(f"\n  📊 Informe visual generado: {ruta.resolve()}")
+    print("     Ábrelo con doble clic para verlo en el navegador.")
 
 
 if __name__ == "__main__":
