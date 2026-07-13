@@ -4,12 +4,17 @@ tienen ventaja REAL (no solo la que mejor encaja al pasado).
 Idea clave contra el *overfitting*:
   - Se divide el histórico en dos tramos por tiempo: ENTRENAMIENTO (train, el
     70% más antiguo) y VALIDACIÓN (test, el 30% más reciente).
-  - Se elige la configuración mirando el train, pero lo que decide si es buena
-    es su comportamiento en el test, datos que "no ha visto".
-  - Una estrategia solo es de fiar si funciona en AMBOS tramos.
+  - Una combinación solo se considera candidata si es rentable en AMBOS tramos
+    con suficientes operaciones; el ranking premia la CONSISTENCIA entre train
+    y test, no un test alto aislado.
 
-Así evitamos el error clásico: encontrar el número mágico que brilla en el
-pasado y fracasa en cuanto se usa de verdad.
+Aviso honesto sobre comparaciones múltiples (léelo):
+  Probar muchas combinaciones y quedarse con "la mejor en test" sesga ese
+  resultado al alza: con suficientes intentos, algo parece bueno por azar
+  (winner's curse / data dredging). Por eso una 🟢 aquí NO es una estrategia
+  ganadora demostrada, solo una CANDIDATA a validar después en tiempo real
+  (paper) durante semanas. La forma correcta de confirmarla es un tercer tramo
+  intacto o un forward-test; este explorador es un filtro, no una prueba final.
 """
 from __future__ import annotations
 
@@ -141,17 +146,24 @@ def explorar_par(
     return filas
 
 
+def _acotar_pf(pf: float, tope: float = 3.0) -> float:
+    """Acota el profit factor: por encima del tope, más PF no significa más fiable
+    (suele ser una racha de pocas operaciones). Trata infinito como el tope."""
+    return tope if pf == float("inf") else min(pf, tope)
+
+
 def _clave_orden(fila: dict) -> tuple:
-    """Ordena: primero robustas; dentro de cada grupo, por PF de test ACOTADO
-    y por tamaño de muestra. Acotar el PF evita que una racha afortunada de
-    pocas operaciones (PF enorme o infinito) se presente como la mejor.
+    """Ordena: primero robustas; dentro de cada grupo, por CONSISTENCIA entre
+    train y test (el menor de los dos PF, acotado) y por tamaño de muestra.
+
+    Ordenar por consistencia —y no por el PF de test— evita el sesgo de elegir
+    la combinación con mayor test entre muchas (winner's curse): premia a la que
+    funciona en los DOS tramos, no a la que tuvo suerte en el reciente.
     """
     prioridad = {"🟢 robusta": 0, "🟡 dudosa": 1, "🔴 no robusta": 2, "⚪ pocas ops": 3}
-    pf = fila["pf_test"]
-    # Acotamos a 3.0: por encima de eso, más PF no significa "más fiable".
-    pf_cap = 3.0 if pf == float("inf") else min(pf, 3.0)
-    # Más operaciones = más fiable, por eso desempata a favor de la muestra grande.
-    return (prioridad.get(fila["veredicto"], 9), -round(pf_cap, 2), -fila["ops_test"])
+    consistencia = min(_acotar_pf(fila["pf_train"]), _acotar_pf(fila["pf_test"]))
+    # Más operaciones = más fiable; desempata a favor de la muestra grande.
+    return (prioridad.get(fila["veredicto"], 9), -round(consistencia, 2), -fila["ops_test"])
 
 
 def ranking(filas: list[dict]) -> list[dict]:
