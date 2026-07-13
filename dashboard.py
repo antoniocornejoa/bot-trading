@@ -29,11 +29,17 @@ st.set_page_config(page_title="Bot de Trading · Panel", page_icon="📊", layou
 
 
 # ------------------------------- utilidades comunes -----------------------------
+def _semilla_demo(symbol: str, timeframe: str) -> int:
+    """Semilla estable a partir del par+timeframe, para que cada moneda tenga
+    una serie de ejemplo DISTINTA (y no todas la misma serie inventada)."""
+    return sum(ord(c) for c in f"{symbol}{timeframe}") % 100000
+
+
 @st.cache_data(show_spinner=False)
 def descargar(fuente: str, symbol: str, timeframe: str, velas: int) -> pd.DataFrame:
     """Descarga velas según la fuente elegida (cacheado)."""
     if fuente.startswith("Datos de ejemplo"):
-        return data.datos_demo(n=velas)
+        return data.datos_demo(n=velas, seed=_semilla_demo(symbol, timeframe))
     nombre = "kraken" if fuente == "Kraken" else "binance"
     exchange = data.crear_exchange_publico(nombre)
     return data.descargar_velas(exchange, symbol, timeframe, limite=velas)
@@ -123,6 +129,11 @@ def pestaña_backtest() -> None:
     if pf < 1.0:
         st.warning("⚠️ Profit factor < 1: con estos parámetros la estrategia "
                    "**pierde dinero**. No la lleves a real.")
+    if res.num_operaciones < 20:
+        st.warning(f"⚠️ Solo {res.num_operaciones} operaciones: **muy pocas para "
+                   "fiarte de estos números**. Un 'Aciertos 100%' o un 'Profit "
+                   "factor ∞' con tan pocas operaciones es suerte, no una ventaja. "
+                   "Sube las velas históricas o usa un timeframe más corto.")
 
     st.subheader("Evolución del capital")
     if res.curva_equity is not None and not res.curva_equity.empty:
@@ -175,7 +186,9 @@ def pestaña_explorador() -> None:
         sl = rc2.slider("Stop-loss (× ATR)", 1.0, 5.0, 2.0, step=0.5, key="sl_ex")
         tp = rc2.slider("Take-profit (× ATR)", 1.0, 6.0, 3.0, step=0.5, key="tp_ex")
         limite = rc3.slider("Límite pérdida diaria (%)", 1.0, 10.0, 3.0, step=0.5, key="lim_ex")
-        min_test = rc3.slider("Mín. operaciones en test", 3, 30, 5, key="mt_ex")
+        min_test = rc3.slider("Mín. operaciones en test", 10, 40, 15, key="mt_ex",
+                              help="Cuantas menos, más probable es que un buen "
+                                   "resultado sea suerte. 15+ es lo mínimo sensato.")
 
     buscar = st.button("🔎  Buscar las mejores estrategias", type="primary")
     if not buscar:
@@ -191,13 +204,17 @@ def pestaña_explorador() -> None:
     barra = st.progress(0.0, text="Empezando…")
     filas: list[dict] = []
     errores: list[str] = []
+    sin_datos: list[str] = []
 
     for i, (par, tf) in enumerate(combinaciones):
         barra.progress(i / len(combinaciones), text=f"Probando {par} · {tf}…")
         try:
             df = descargar(fuente, par, tf, velas)
-            filas.extend(optimizer.explorar_par(df, par, tf, riesgo,
-                                                min_trades_test=min_test))
+            nuevas = optimizer.explorar_par(df, par, tf, riesgo, min_trades_test=min_test)
+            if nuevas:
+                filas.extend(nuevas)
+            else:
+                sin_datos.append(f"{par} {tf}")  # histórico demasiado corto
         except Exception as e:  # noqa: BLE001
             errores.append(f"{par} {tf}: {type(e).__name__}")
     barra.progress(1.0, text="Listo")
@@ -205,21 +222,40 @@ def pestaña_explorador() -> None:
     if errores:
         st.warning("No se pudieron probar algunas combinaciones (datos no "
                    f"disponibles): {', '.join(errores)}. Prueba Kraken o demo.")
+    if sin_datos:
+        st.warning(f"Sin histórico suficiente (se omitieron, NO se probaron): "
+                   f"{', '.join(sin_datos)}.")
     if not filas:
         st.error("No se obtuvieron resultados. Cambia la fuente de datos o los pares.")
         return
+
+    if fuente.startswith("Datos de ejemplo"):
+        st.error("🔬 Estás usando **datos SIMULADOS (demo)**, no precios reales. "
+                 "Estos resultados no valen para decidir nada: solo sirven para ver "
+                 "cómo funciona el explorador. Cambia a **Binance** o **Kraken** "
+                 "para datos reales.")
 
     orden = optimizer.ranking(filas)
     robustas = sum(1 for f in orden if f["veredicto"].startswith("🟢"))
     st.success(f"Probadas {len(filas)} combinaciones. "
                f"**{robustas}** aguantan la validación (🟢 robusta).")
 
-    if robustas == 0:
-        st.warning("⚠️ Ninguna combinación pasó la validación out-of-sample. Es lo más "
-                   "habitual y HONESTO: significa que esta estrategia simple no tiene "
-                   "ventaja clara en estos mercados. Mejor eso que engañarte con datos "
-                   "sobreajustados. Prueba otros pares/timeframes… o acepta que quizá "
-                   "no haya un filón fácil (que es la realidad del trading).")
+    # --- La advertencia MÁS importante: comparaciones múltiples (data dredging).
+    if robustas > 0:
+        st.warning(
+            f"⚠️ **Cuidado, esto es clave:** has probado **{len(filas)} combinaciones**. "
+            f"Al probar tantas, es NORMAL que unas pocas salgan 🟢 **por pura suerte**, "
+            f"aunque no tengan ninguna ventaja real (es la 'trampa de las comparaciones "
+            f"múltiples'). Un 🟢 con pocas operaciones NO es una estrategia ganadora "
+            f"probada: es, como mucho, una **candidata a seguir investigando**. "
+            f"Señal de alarma: si la misma configuración da 🟢 en un par y fatal en "
+            f"otro, es ruido, no ventaja."
+        )
+    else:
+        st.info("Ninguna combinación pasó la validación. Es lo más habitual y **honesto**: "
+                "esta estrategia simple no muestra ventaja clara en estos mercados. Que "
+                "un análisis riguroso diga «aquí no hay filón» vale más que un número "
+                "bonito que te haga perder dinero.")
 
     def _fmt_pf(v):
         return "∞" if v == float("inf") else round(v, 2)
@@ -234,13 +270,17 @@ def pestaña_explorador() -> None:
     st.dataframe(tabla, use_container_width=True, hide_index=True)
 
     st.markdown(
-        "**Cómo leer esta tabla:**\n"
-        "- 🟢 **robusta**: rentable en train **y** en test → la candidata seria.\n"
+        "**Cómo leer esta tabla (importante):**\n"
+        "- 🟢 **robusta**: rentable en train **y** en test con suficientes operaciones. "
+        "Es una **candidata a investigar**, NO una estrategia ganadora demostrada.\n"
         "- 🟡 dudosa / 🔴 no robusta / ⚪ pocas ops: descártalas.\n"
-        "- Fíate de **PF test** (datos no vistos), no de **PF train**. Si train es "
-        "altísimo y test malo, es *overfitting*: encaja al pasado y fallará.\n"
-        "- Aun con una 🟢, el siguiente paso es **paper** (dinero de mentira) semanas, "
-        "nunca dinero real directo."
+        "- **Ops test** es lo primero que hay que mirar: con menos de ~15-20 operaciones, "
+        "cualquier resultado es ruido por muy bueno que parezca.\n"
+        "- Si **PF train** es altísimo y **PF test** malo → *overfitting* (encaja al "
+        "pasado, falla en el futuro).\n"
+        "- **Ninguna 🟢 se lleva a dinero real directamente.** El único camino honesto: "
+        "probarla en **paper** (dinero de mentira) durante **semanas o meses** y ver si "
+        "de verdad aguanta. Casi siempre no aguanta — y eso es información valiosa."
     )
 
 
