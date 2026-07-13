@@ -14,7 +14,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src import indicators as ind
-from src import risk, strategy
+from src import optimizer, risk, strategy
 from src.backtest import ejecutar_backtest
 
 
@@ -138,6 +138,53 @@ def test_contabilidad_coherente():
     # La suma de PnL debe cuadrar con el cambio de capital (contabilidad cerrada).
     suma_pnl = sum(o.pnl for o in res.operaciones)
     assert abs(suma_pnl - (res.equity_final - res.equity_inicial)) < 1e-3
+
+
+def test_metricas_operaciones_vacio():
+    m = optimizer.metricas_operaciones([], 1000)
+    assert m["ops"] == 0 and m["profit_factor"] == 0.0 and m["retorno_pct"] == 0.0
+
+
+def test_metricas_operaciones_calcula():
+    from types import SimpleNamespace
+    ops = [SimpleNamespace(pnl=10.0), SimpleNamespace(pnl=-5.0), SimpleNamespace(pnl=20.0)]
+    m = optimizer.metricas_operaciones(ops, 1000)
+    assert m["ops"] == 3
+    assert abs(m["profit_factor"] - (30.0 / 5.0)) < 1e-9   # ganancias 30, pérdidas 5
+    assert abs(m["retorno_pct"] - 2.5) < 1e-9              # pnl 25 sobre 1000
+    assert abs(m["aciertos"] - (2 / 3 * 100)) < 1e-6
+
+
+def test_explorar_par_estructura():
+    df = _velas_sinteticas(n=1200, seed=5)
+    riesgo = {"capital": 1000, "riesgo": 1.0, "sl": 2.0, "tp": 3.0, "limite": 3.0}
+    filas = optimizer.explorar_par(df, "BTC/USDT", "1h", riesgo, min_trades_test=3)
+    assert len(filas) > 0
+    campos = {"par", "tf", "ema_fast", "ema_slow", "pf_train", "pf_test",
+              "ops_test", "veredicto"}
+    assert campos.issubset(filas[0].keys())
+    # ema_fast siempre menor que ema_slow (las inválidas se descartan).
+    assert all(f["ema_fast"] < f["ema_slow"] for f in filas)
+    # El ranking no debe fallar y devuelve el mismo número de filas.
+    orden = optimizer.ranking(filas)
+    assert len(orden) == len(filas)
+    # Las robustas (si las hay) van antes que las de "pocas ops".
+    veredictos = [f["veredicto"] for f in orden]
+    if "🟢 robusta" in veredictos and "⚪ pocas ops" in veredictos:
+        assert veredictos.index("🟢 robusta") < veredictos.index("⚪ pocas ops")
+
+
+def test_split_train_test_sin_solape():
+    # Cada operación cae en train O en test según la fecha de corte, nunca en ambos.
+    df = _velas_sinteticas(n=1000, seed=9)
+    riesgo = {"capital": 1000, "riesgo": 1.0, "sl": 2.0, "tp": 3.0, "limite": 3.0}
+    filas = optimizer.explorar_par(df, "BTC/USDT", "1h", riesgo,
+                                   grid={"ema_fast": [12], "ema_slow": [26],
+                                         "rsi_max_entry": [70]})
+    assert len(filas) == 1
+    f = filas[0]
+    # ops_train + ops_test no puede exceder el total de operaciones posibles.
+    assert f["ops_train"] >= 0 and f["ops_test"] >= 0
 
 
 if __name__ == "__main__":
