@@ -13,6 +13,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from src import dca as dca_mod
 from src import indicators as ind
 from src import optimizer, risk, strategy
 from src.backtest import ejecutar_backtest
@@ -185,6 +186,41 @@ def test_split_train_test_sin_solape():
     f = filas[0]
     # ops_train + ops_test no puede exceder el total de operaciones posibles.
     assert f["ops_train"] >= 0 and f["ops_test"] >= 0
+
+
+def test_dca_invariantes():
+    df = _velas_sinteticas(n=1000, seed=4)
+    res = dca_mod.backtest_dca(df, monto_por_compra=20, frecuencia="Semanal")
+    # Se hizo al menos una compra y las unidades son positivas.
+    assert res.num_compras > 0 and res.unidades > 0
+    # Lo invertido = monto * número de compras (exacto).
+    assert abs(res.invertido - 20 * res.num_compras) < 1e-9
+    # El precio medio está dentro del rango de precios del periodo.
+    assert df["close"].min() <= res.precio_medio <= df["close"].max()
+    # Las curvas tienen la misma longitud que los datos.
+    assert len(res.curva_valor) == len(df) and len(res.curva_invertido) == len(df)
+    # La inversión acumulada es monótona no decreciente.
+    assert (res.curva_invertido.diff().dropna() >= -1e-9).all()
+
+
+def test_dca_precio_subiendo_gana():
+    # Con precios estrictamente crecientes, el DCA debe terminar en ganancia.
+    idx = pd.date_range("2023-01-01", periods=400, freq="1D", tz="UTC")
+    precio = pd.Series(range(100, 500), index=idx, dtype=float)
+    df = pd.DataFrame({"open": precio, "high": precio, "low": precio,
+                       "close": precio, "volume": 1.0}, index=idx)
+    res = dca_mod.backtest_dca(df, 10, "Semanal", comision_pct=0.0)
+    assert res.valor_final > res.invertido
+    # Sin comisiones, invertir todo al inicio (precio más bajo) gana más que DCA.
+    assert res.valor_lump > res.valor_final
+
+
+def test_dca_frecuencias():
+    df = _velas_sinteticas(n=1000, seed=8)
+    diaria = dca_mod.backtest_dca(df, 10, "Diaria")
+    semanal = dca_mod.backtest_dca(df, 10, "Semanal")
+    # Comprar a diario implica más compras que semanalmente.
+    assert diaria.num_compras > semanal.num_compras
 
 
 if __name__ == "__main__":

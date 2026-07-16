@@ -21,7 +21,7 @@ from types import SimpleNamespace
 import pandas as pd
 import streamlit as st
 
-from src import data, optimizer
+from src import data, dca, optimizer
 from src.backtest import ejecutar_backtest
 from src.strategy import BUY, SELL, generate_signals
 
@@ -284,10 +284,90 @@ def pestaña_explorador() -> None:
     )
 
 
+# ================================ PESTAÑA 3: DCA =================================
+def pestaña_dca() -> None:
+    st.caption(
+        "DCA (compra periódica): inviertes una cantidad FIJA cada cierto tiempo, "
+        "pase lo que pase con el precio. No intenta adivinar el mercado. Es lo "
+        "sensato para poca inversión. No promete ganancias diarias: si el activo "
+        "baja a largo plazo, pierdes."
+    )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        fuente = _fuente_selector("f_dca")
+        symbol = st.text_input("Par", value="BTC/USDT", key="sym_dca")
+        timeframe = st.selectbox("Vela (timeframe)", ["1h", "4h", "1d"], index=2, key="tf_dca")
+    with c2:
+        velas = st.slider("Velas históricas", 300, 3000, 1500, step=100, key="v_dca")
+        monto = st.number_input("Cantidad por compra (USDT)", 5, 100_000, 20, step=5, key="m_dca")
+        frecuencia = st.selectbox("Frecuencia de compra", list(dca.FRECUENCIAS.keys()),
+                                  index=1, key="fr_dca")
+
+    if not st.button("💧  Simular DCA", type="primary"):
+        st.info("Elige par, cantidad y frecuencia, y pulsa **Simular DCA**.")
+        return
+
+    try:
+        with st.spinner(f"Obteniendo datos de {symbol}…"):
+            df = descargar(fuente, symbol, timeframe, velas)
+    except Exception as e:  # noqa: BLE001
+        st.error(f"No se pudieron descargar datos: {type(e).__name__}: {str(e)[:200]}")
+        st.info("Prueba con **Kraken** o **Datos de ejemplo (demo)**.")
+        return
+
+    if df.empty or len(df) < 30:
+        st.error("Datos insuficientes.")
+        return
+    if fuente.startswith("Datos de ejemplo"):
+        st.warning("Estás viendo **datos simulados** (demo), no precios reales.")
+
+    res = dca.backtest_dca(df, monto, frecuencia,
+                           comision_pct=0.1)
+    st.success(f"Simulación completada: {res.num_compras} compras de {monto} USDT "
+               f"({frecuencia.lower()}) entre {df.index[0].date()} y {df.index[-1].date()}.")
+
+    c = st.columns(4)
+    c[0].metric("Total invertido", f"{res.invertido:,.0f}")
+    c[1].metric("Valor final", f"{res.valor_final:,.0f}", f"{res.rendimiento_pct:+.1f}%")
+    c[2].metric("Ganancia/pérdida", f"{res.ganancia:+,.0f} USDT")
+    c[3].metric("Precio medio compra", f"{res.precio_medio:,.2f}")
+
+    st.subheader("Tu dinero: invertido vs valor acumulado")
+    grafico = pd.DataFrame({
+        "Invertido": res.curva_invertido,
+        "Valor de mercado": res.curva_valor,
+    })
+    st.area_chart(grafico, height=300, color=["#8a97a1", "#0d9488"])
+    st.caption("Gris = lo que has puesto · Verde = lo que vale. Si el verde va por "
+               "encima del gris, ganas; si va por debajo, pierdes.")
+
+    # Comparación honesta con invertir todo de golpe.
+    dif = res.valor_final - res.valor_lump
+    st.markdown(
+        f"**DCA vs invertir todo de golpe:** con estas mismas aportaciones totales "
+        f"({res.invertido:,.0f} USDT), invertir todo el primer día habría valido hoy "
+        f"**{res.valor_lump:,.0f} USDT** vs **{res.valor_final:,.0f}** del DCA "
+        f"({'DCA gana' if dif >= 0 else 'DCA pierde'} {abs(dif):,.0f}). "
+        "El DCA suele rendir algo menos que acertar el fondo, pero **reduce el riesgo "
+        "de entrar justo en un pico** y es mucho más fácil de sostener."
+    )
+
+    st.info("💡 **Realidad del DCA:** funciona a **largo plazo** y para activos que "
+            "suben con los años (como ha hecho BTC históricamente), pero **no está "
+            "garantizado** y puedes pasar meses en pérdidas. No es 'ganancia diaria'. "
+            "Antes de hacerlo con dinero real, decide una cantidad que puedas mantener "
+            "y no mires el precio cada día.")
+
+
 # ------------------------------------ layout ------------------------------------
 st.title("📊 Bot de Trading — Panel")
-tab1, tab2 = st.tabs(["📈 Backtest simple", "🔬 Explorador de estrategias"])
+tab1, tab2, tab3 = st.tabs([
+    "📈 Backtest simple", "🔬 Explorador de estrategias", "💧 DCA (compra periódica)",
+])
 with tab1:
     pestaña_backtest()
 with tab2:
     pestaña_explorador()
+with tab3:
+    pestaña_dca()

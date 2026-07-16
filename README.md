@@ -67,10 +67,14 @@ deslizadores y botones, y ves los gráficos al momento en tu navegador:
 streamlit run dashboard.py
 ```
 
-Se abre solo en el navegador. A la izquierda eliges par, timeframe, medias y
-riesgo; pulsas **Ejecutar backtest** y ves la curva de capital, el precio con
-las compras/ventas marcadas y las estadísticas. (El panel es solo para
-backtesting, sin riesgo.)
+Se abre solo en el navegador con tres pestañas:
+- **📈 Backtest simple**: prueba una configuración y ve los gráficos.
+- **🔬 Explorador de estrategias**: prueba muchas combinaciones y detecta cuáles
+  tienen ventaja real (validación out-of-sample, anti-overfitting).
+- **💧 DCA (compra periódica)**: simula invertir una cantidad fija cada cierto
+  tiempo — el enfoque sensato para poca inversión, sin adivinar el mercado.
+
+(El panel es solo para simular, sin riesgo.)
 
 > ¿Prefieres la terminal? Sigue con el Paso 1. Ambos caminos hacen lo mismo.
 
@@ -215,6 +219,8 @@ src/
   strategy.py        <- reglas de compra/venta
   risk.py            <- gestión de riesgo (lo más importante)
   backtest.py        <- motor de simulación con comisiones
+  optimizer.py       <- explorador de estrategias (validación out-of-sample)
+  dca.py             <- simulador de compra periódica (DCA)
   broker.py          <- ejecuta órdenes reales/testnet
   bot.py             <- bucle en tiempo real
 tests/               <- pruebas automáticas
