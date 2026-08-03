@@ -223,6 +223,43 @@ def test_dca_frecuencias():
     assert diaria.num_compras > semanal.num_compras
 
 
+def test_dca_bot_clave_periodo():
+    from datetime import datetime, timezone
+    from src.dca_bot import clave_periodo
+
+    lunes = datetime(2026, 7, 13, 8, 0, tzinfo=timezone.utc)
+    viernes = datetime(2026, 7, 17, 22, 0, tzinfo=timezone.utc)
+    lunes_sig = datetime(2026, 7, 20, 8, 0, tzinfo=timezone.utc)
+
+    # Misma semana -> misma clave (una sola compra); semana nueva -> clave nueva.
+    assert clave_periodo(lunes, "semanal") == clave_periodo(viernes, "semanal")
+    assert clave_periodo(lunes, "semanal") != clave_periodo(lunes_sig, "semanal")
+
+    # Diaria: días distintos, claves distintas; mismo día, misma clave.
+    assert clave_periodo(lunes, "diaria") != clave_periodo(viernes, "diaria")
+    mismo_dia_tarde = datetime(2026, 7, 13, 23, 59, tzinfo=timezone.utc)
+    assert clave_periodo(lunes, "diaria") == clave_periodo(mismo_dia_tarde, "diaria")
+
+    # Mensual: julio != agosto.
+    agosto = datetime(2026, 8, 1, 0, 0, tzinfo=timezone.utc)
+    assert clave_periodo(lunes, "mensual") != clave_periodo(agosto, "mensual")
+
+    # Frecuencia inválida -> error claro.
+    try:
+        clave_periodo(lunes, "quincenal")
+        assert False, "Debía lanzar ValueError"
+    except ValueError:
+        pass
+
+
+def test_config_valida_dca():
+    # La config del repo carga y trae la sección dca con valores válidos.
+    from src.config import load_config
+    cfg = load_config()
+    assert float(cfg.dca["monto_usdt"]) > 0
+    assert str(cfg.dca["frecuencia"]).lower() in {"diaria", "semanal", "mensual"}
+
+
 if __name__ == "__main__":
     for nombre, fn in list(globals().items()):
         if nombre.startswith("test_") and callable(fn):

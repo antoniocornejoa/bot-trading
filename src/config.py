@@ -27,6 +27,7 @@ class Config:
     costes: dict[str, Any]
     backtest: dict[str, Any]
     live_bot: dict[str, Any]
+    dca: dict[str, Any]
     understand_live_risk: bool
 
     # Credenciales (se rellenan según el modo)
@@ -61,6 +62,8 @@ def load_config(path: str | Path = ROOT / "config.yaml") -> Config:
         costes=raw["costes"],
         backtest=raw["backtest"],
         live_bot=raw["live_bot"],
+        # Valores por defecto para configs antiguas sin sección dca.
+        dca=raw.get("dca", {"monto_usdt": 20, "frecuencia": "semanal"}),
         understand_live_risk=understand,
     )
 
@@ -117,3 +120,8 @@ def _validate(cfg: Config) -> None:
         raise ValueError("stop_loss_atr_mult debe ser mayor que 0.")
     if cfg.strategy["ema_fast"] >= cfg.strategy["ema_slow"]:
         raise ValueError("ema_fast debe ser menor que ema_slow.")
+
+    if float(cfg.dca.get("monto_usdt", 0)) <= 0:
+        raise ValueError("dca.monto_usdt debe ser mayor que 0.")
+    if str(cfg.dca.get("frecuencia", "")).lower() not in {"diaria", "semanal", "mensual"}:
+        raise ValueError("dca.frecuencia debe ser diaria, semanal o mensual.")

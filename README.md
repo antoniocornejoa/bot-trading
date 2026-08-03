@@ -228,6 +228,25 @@ tests/               <- pruebas automáticas
 
 ---
 
+## 💤 ¿"Ingresos pasivos"? Lo honesto
+
+No existe el bot "suficientemente rentable garantizado". Lo que sí existe,
+ordenado de más a menos sensato para poca inversión:
+
+| Opción | Qué es | Expectativa realista | Riesgo |
+|---|---|---|---|
+| **DCA automático** (`run_dca.py`) | Comprar una cantidad fija cada semana/mes, solo | La del activo a largo plazo (BTC histórico: bueno; futuro: nadie lo sabe) | Caídas de mercado; puedes pasar meses en rojo |
+| **Staking** (en el exchange) | Bloquear monedas (ETH, SOL…) a cambio de un rendimiento | ~2-5% anual en la propia cripto | El precio de la cripto puede caer más que el rendimiento |
+| Estrategias técnicas | Predecir el mercado | Ya lo medimos: **sin ventaja demostrable** | Alto |
+| "Bots rentables" de internet | Promesas de ganancias diarias | Estafa o autoengaño en casi todos los casos | Perderlo todo |
+
+El DCA automático de este proyecto (`python run_dca.py`) es la pieza "pasiva"
+de verdad: compra solo, una vez por periodo, y guarda el historial. Pruébalo
+en `mode: paper` primero. El staking no necesita código: se activa en la web
+del exchange sobre las monedas que vayas acumulando.
+
+---
+
 ## ❓ Preguntas frecuentes
 
 **¿Puedo tener ganancias diarias garantizadas?**

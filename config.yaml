@@ -52,3 +52,8 @@ backtest:
 # --- BOT EN VIVO ----------------------------------------------
 live_bot:
   segundos_entre_ciclos: 60  # Cada cuánto revisa el mercado (en paper/live)
+
+# --- DCA AUTOMÁTICO (compra periódica, python run_dca.py) -----
+dca:
+  monto_usdt: 20        # Cuánto compra cada vez (mínimo de Binance: ~10-15)
+  frecuencia: semanal   # diaria, semanal o mensual
