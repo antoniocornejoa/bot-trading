@@ -18,5 +18,9 @@ venv/
 # Sistema
 .DS_Store
 
-# Datos descargados del sistema cuantitativo (solo se suben los informes)
-data_store/
+# Datos del sistema cuantitativo: los ZIP crudos y las velas de 1m/5m/15m no se suben
+# (pesan cientos de MB); las velas 1h/4h/1d en Parquet (~10 MB) sí, para investigar desde la nube.
+data_store/raw/
+data_store/parquet/**/*_klines_1m.parquet
+data_store/parquet/**/*_klines_5m.parquet
+data_store/parquet/**/*_klines_15m.parquet

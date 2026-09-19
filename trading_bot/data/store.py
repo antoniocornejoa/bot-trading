@@ -47,20 +47,44 @@ def dataset_hash(df: pd.DataFrame) -> str:
     return h.hexdigest()[:16]
 
 
-def resample(df_1m: pd.DataFrame, timeframe: str) -> pd.DataFrame:
-    """Agrupa velas de 1 minuto en `timeframe`, etiquetando cada vela por su apertura.
+INTERVAL_ORDER = ["1m", "5m", "15m", "1h", "4h", "1d"]
 
-    Se descartan velas agregadas incompletas (menos del 90 % de los minutos), que solo
+
+def infer_interval(df: pd.DataFrame) -> str:
+    """Intervalo base de un DataFrame de velas a partir de la mediana de sus saltos."""
+    step = pd.Series(df.index[1:] - df.index[:-1]).median()
+    for k, f in _PANDAS_FREQ.items():
+        if pd.Timedelta(f) == step:
+            return k
+    raise ValueError(f"intervalo no reconocido: {step}")
+
+
+def finest_available(root: str | Path, market: str, symbol: str) -> tuple[Path, str] | None:
+    """Parquet de velas más fino disponible para un símbolo (1m si existe, si no 15m, ...)."""
+    for k in INTERVAL_ORDER:
+        path = parquet_path(root, market, symbol, f"klines_{k}")
+        if path.exists():
+            return path, k
+    return None
+
+
+def resample(df: pd.DataFrame, timeframe: str) -> pd.DataFrame:
+    """Agrupa velas de un intervalo base en `timeframe` (mayor), etiquetando por apertura.
+
+    Se descartan velas agregadas incompletas (menos del 90 % de las barras base), que solo
     aparecen en huecos del proveedor o en el último tramo del histórico.
     """
-    if timeframe == "1m":
-        return df_1m.copy()
+    base = infer_interval(df)
+    if timeframe == base:
+        return df.copy()
     freq = _PANDAS_FREQ[timeframe]
+    if pd.Timedelta(freq) < pd.Timedelta(_PANDAS_FREQ[base]):
+        raise ValueError(f"no se puede pasar de {base} a {timeframe}")
     agg = {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}
-    extra = {c: "sum" for c in ("quote_volume", "trades") if c in df_1m.columns}
-    r = df_1m.resample(freq, label="left", closed="left")
+    extra = {c: "sum" for c in ("quote_volume", "trades") if c in df.columns}
+    r = df.resample(freq, label="left", closed="left")
     out = r.agg({**agg, **extra})
-    minutos = r["close"].count()
-    esperados = pd.Timedelta(freq) / pd.Timedelta("1min")
-    out = out[minutos >= 0.9 * esperados].dropna(subset=["open", "close"])
+    barras = r["close"].count()
+    esperadas = pd.Timedelta(freq) / pd.Timedelta(_PANDAS_FREQ[base])
+    out = out[barras >= 0.9 * esperadas].dropna(subset=["open", "close"])
     return out

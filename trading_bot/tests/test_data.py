@@ -38,3 +38,12 @@ def test_cross_check_flags_deviation():
     b = a.copy(); b.iloc[1440 * 2:1440 * 3, :4] *= 1.02
     dev = validation.cross_check(a, b, tol_pct=0.5)
     assert len(dev) == 1
+
+
+def test_resample_from_coarser_base_matches_direct():
+    df = synthetic.make_1m(4)
+    via_15m = store.resample(store.resample(df, "15m"), "4h")
+    direct = store.resample(df, "4h")
+    pd.testing.assert_frame_equal(via_15m[["open", "high", "low", "close", "volume"]],
+                                  direct[["open", "high", "low", "close", "volume"]])
+    assert store.infer_interval(via_15m) == "4h"

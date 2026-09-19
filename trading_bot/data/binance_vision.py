@@ -6,10 +6,14 @@ de red a Binance). Uso:
     python -m trading_bot.data.binance_vision --symbols BTCUSDT ETHUSDT SOLUSDT \
         --start 2017-08 --markets spot futures funding
 
-Descarga ZIP mensuales de velas de 1 minuto (spot y perpetuos USDT-M) y de funding,
-los guarda tal cual en data_store/raw y produce un Parquet limpio por símbolo en
-data_store/parquet/<mercado>/<SYMBOL>_klines_1m.parquet, junto con un informe de
-validación y la huella (hash) del dataset.
+Descarga ZIP mensuales de velas (spot y perpetuos USDT-M) y de funding, los guarda tal
+cual en data_store/raw y produce un Parquet limpio por símbolo en
+data_store/parquet/<mercado>/<SYMBOL>_klines_<intervalo>.parquet, junto con un informe
+de validación y la huella (hash) del dataset.
+
+`--intervals 1m` (por defecto) es la base ideal pero pesa 2-3 GB; `--intervals 15m 1h 4h 1d`
+descarga directamente los timeframes de investigación (decenas de MB) y es lo que usa el
+workflow de GitHub Actions. El resto del código trabaja con el intervalo más fino disponible.
 
 Los meses que no existen (símbolo aún no listado) devuelven 404 y se saltan.
 """
@@ -35,11 +39,11 @@ KLINE_COLS = ["open_time", "open", "high", "low", "close", "volume", "close_time
               "quote_volume", "trades", "taker_buy_base", "taker_buy_quote", "ignore"]
 
 
-def _url(market: str, symbol: str, ym: str) -> str:
+def _url(market: str, symbol: str, ym: str, interval: str = "1m") -> str:
     if market == "spot":
-        return f"{BASE}/spot/monthly/klines/{symbol}/1m/{symbol}-1m-{ym}.zip"
+        return f"{BASE}/spot/monthly/klines/{symbol}/{interval}/{symbol}-{interval}-{ym}.zip"
     if market == "futures":
-        return f"{BASE}/futures/um/monthly/klines/{symbol}/1m/{symbol}-1m-{ym}.zip"
+        return f"{BASE}/futures/um/monthly/klines/{symbol}/{interval}/{symbol}-{interval}-{ym}.zip"
     if market == "funding":
         return f"{BASE}/futures/um/monthly/fundingRate/{symbol}/{symbol}-fundingRate-{ym}.zip"
     raise ValueError(market)
@@ -114,10 +118,11 @@ def parse_funding_zip(data: bytes) -> pd.DataFrame:
     return out.dropna()
 
 
-def download_symbol(market: str, symbol: str, months: list[str], raw_root: Path, pq_root: Path) -> None:
+def download_symbol(market: str, symbol: str, months: list[str], raw_root: Path, pq_root: Path,
+                    interval: str = "1m") -> None:
     frames = []
     for ym in months:
-        url = _url(market, symbol, ym)
+        url = _url(market, symbol, ym, interval)
         dest = raw_root / market / symbol / Path(url).name
         data = _fetch(url, dest)
         if data is None:
@@ -128,12 +133,12 @@ def download_symbol(market: str, symbol: str, months: list[str], raw_root: Path,
         print(f"  {market} {symbol}: sin datos")
         return
     df = validation.clean(pd.concat(frames))
-    kind = "funding" if market == "funding" else "klines_1m"
+    kind = "funding" if market == "funding" else f"klines_{interval}"
     path = store.parquet_path(pq_root, market, symbol, kind)
     h = store.save(df, path)
     print(f"  -> {path}  hash={h}")
     if market != "funding":
-        rep = validation.validate(df)
+        rep = validation.validate(df, freq=store._PANDAS_FREQ[interval])
         (path.with_suffix(".validation.md")).write_text(
             f"# Validación {market} {symbol}\n\nhash: `{h}`\n\n{rep.to_markdown()}\n")
         print(rep.to_markdown())
@@ -144,6 +149,7 @@ def main(argv=None) -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--symbols", nargs="+", default=cfg["universe"]["spot"])
     p.add_argument("--markets", nargs="+", default=["spot"], choices=["spot", "futures", "funding"])
+    p.add_argument("--intervals", nargs="+", default=["1m"], choices=list(store._PANDAS_FREQ))
     p.add_argument("--start", default=cfg["universe"]["start"], help="YYYY-MM")
     p.add_argument("--end", default=None, help="YYYY-MM (por defecto, último mes completo)")
     p.add_argument("--root", default=".", help="carpeta base del proyecto")
@@ -153,8 +159,9 @@ def main(argv=None) -> None:
     months = _months(a.start, a.end)
     for market in a.markets:
         for symbol in a.symbols:
-            print(f"== {market} {symbol} ({months[0]} → {months[-1]})")
-            download_symbol(market, symbol, months, raw_root, pq_root)
+            for interval in (["1m"] if market == "funding" else a.intervals):
+                print(f"== {market} {symbol} {interval if market != 'funding' else ''} ({months[0]} → {months[-1]})")
+                download_symbol(market, symbol, months, raw_root, pq_root, interval)
 
 
 if __name__ == "__main__":

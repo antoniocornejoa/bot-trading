@@ -136,12 +136,14 @@ def main(argv=None) -> None:
         if a.synthetic:
             df1 = synthetic.make_1m(400, seed=hash(sym) % 1000)
         else:
-            path = store.parquet_path(Path(a.root) / cfg["paths"]["parquet"], "spot", sym)
-            if not path.exists():
-                print(f"{sym}: falta {path}; ejecuta primero trading_bot.data.binance_vision"); continue
-            df1 = store.load(path)
-        hashes[sym] = store.dataset_hash(df1)
-        profiles[sym] = [profile_timeframe(store.resample(df1, tf), tf, scenarios) for tf in cfg["timeframes"]]
+            found = store.finest_available(Path(a.root) / cfg["paths"]["parquet"], "spot", sym)
+            if found is None:
+                print(f"{sym}: sin datos; ejecuta primero trading_bot.data.binance_vision"); continue
+            df1 = store.load(found[0])
+        base = store.infer_interval(df1)
+        hashes[sym] = f"{store.dataset_hash(df1)} (base {base})"
+        tfs = [tf for tf in cfg["timeframes"] if store.INTERVAL_ORDER.index(tf) >= store.INTERVAL_ORDER.index(base)]
+        profiles[sym] = [profile_timeframe(store.resample(df1, tf), tf, scenarios) for tf in tfs]
         seasonal[sym] = hourly_seasonality(store.resample(df1, "1h"))
         daily[sym] = np.log(store.resample(df1, "1d")["close"]).diff()
         print(f"{sym}: ok")

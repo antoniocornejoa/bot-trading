@@ -46,11 +46,11 @@ def main(argv=None) -> None:
     for s in a.symbols:
         kr = fetch_daily(s)
         store.save(kr, store.parquet_path(pq_root, "kraken", s, "klines_1d"))
-        bpath = store.parquet_path(pq_root, "spot", s)
-        if not bpath.exists():
+        found = store.finest_available(pq_root, "spot", s)
+        if found is None:
             print(f"{s}: Kraken guardado; falta Binance para cruzar")
             continue
-        bn = store.resample(store.load(bpath), "1d")
+        bn = store.resample(store.load(found[0]), "1d")
         dev = validation.cross_check(bn, kr, tol_pct=0.5)
         print(f"{s}: {len(dev)} días con desviación > 0.5 % entre Binance y Kraken")
         if len(dev):
