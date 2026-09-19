@@ -43,7 +43,7 @@ def dataset_hash(df: pd.DataFrame) -> str:
     h = hashlib.sha256()
     h.update(str(df.index[0]).encode()); h.update(str(df.index[-1]).encode())
     h.update(str(len(df)).encode())
-    h.update(pd.util.hash_pandas_object(df[["open", "high", "low", "close", "volume"]].round(8)).values.tobytes())
+    h.update(pd.util.hash_pandas_object(df.select_dtypes("number").round(8)).values.tobytes())
     return h.hexdigest()[:16]
 
 
