@@ -10,10 +10,17 @@ El bot antiguo de `src/` sigue intacto como referencia.
 | 2 Hipótesis | `research/hypotheses.yaml` | registradas H-A1, H-G1, H-H1 y benchmarks; M = 52 |
 | 3 Datos | `data/binance_vision.py`, `data/kraken.py`, `data/validation.py`, `data/store.py` | listo; **se ejecuta en tu equipo** |
 | 1 Mercados | `research/market_profile.py` | listo; necesita los datos de la fase 3 |
-| 4 Backtester | `backtesting/engine.py`, `costs.py`, `metrics.py`, `leakage.py` | núcleo listo y testeado; faltan walk-forward, sensibilidad y Monte Carlo |
-| 5 Candidatas | `strategies/trend.py`, `strategies/pullback.py` | implementadas, sin evaluar |
+| 4 Backtester | `backtesting/engine.py`, `costs.py`, `metrics.py`, `leakage.py`, `grid.py`, `walkforward.py`, `sensitivity.py`, `montecarlo.py`, `dsr.py` | completo y testeado |
+| 5 Candidatas | `strategies/trend.py`, `strategies/pullback.py`, `strategies/benchmarks.py` | implementadas, sin evaluar |
 
-## Qué ejecutar en tu equipo (una vez)
+## Descarga desde la nube (sin ordenador)
+
+El workflow `.github/workflows/download_data.yml` descarga velas 15m/1h/4h/1d, valida, cruza
+con Kraken, genera las fichas de Fase 1 y sube a la rama los Parquet de 1h/4h/1d y los
+informes. Se lanza desde la pestaña *Actions* de GitHub (*Run workflow*) o con cualquier
+cambio en `data_store/TRIGGER`.
+
+## Qué ejecutar en tu equipo (opcional, para velas de 1 minuto)
 
 Requiere Python 3.11+ y acceso a internet (Binance y Kraken están disponibles desde Chile).
 
