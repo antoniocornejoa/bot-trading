@@ -66,7 +66,8 @@ def benchmarks(df: pd.DataFrame, tf: str, costs, engine_kw: dict, n_random: int 
     w = slice(0, sp["validation"].stop)  # train + validation, nunca test
     out = {}
     for S in (BuyAndHold, MA200Momentum, RSI2MeanReversion):
-        out[S.name] = metrics.compute(grid.run_config(S, S.default_params(), df, costs, w, **engine_kw), bpy)
+        kw = {**engine_kw, "risk_pct": 100.0} if S is BuyAndHold else engine_kw  # B&H invierte todo el capital
+        out[S.name] = metrics.compute(grid.run_config(S, S.default_params(), df, costs, w, **kw), bpy)
     rnd = []
     for seed in range(n_random):
         R = RandomSameFrequency.like(like, len(df.iloc[w]), seed=seed) if like is not None and len(like) else RandomSameFrequency(seed=seed)
@@ -123,7 +124,7 @@ def main(argv=None) -> None:
                 L += ["- Meseta: " + fmt(r["plateau"]), ""]
                 if len(r["top"]):
                     cols = list(h["grid"]) + ["train_trades", "train_expectancy_R", "train_t_stat", "train_profit_factor",
-                                              "val_trades", "val_expectancy_R", "val_t_stat", "val_profit_factor", "val_max_drawdown_pct", "val_cost_ratio"]
+                                              "val_trades", "val_expectancy_R", "val_t_stat", "val_profit_factor", "val_sharpe", "val_cagr_pct", "val_max_drawdown_pct", "val_cost_ratio"]
                     L += ["Top 5 por t-stat en train:", "", r["top"][cols].round(3).to_markdown(index=False), ""]
                     if best_like is None:
                         bp = {k: r["top"].iloc[0][k] for k in h["grid"]}
@@ -138,9 +139,12 @@ def main(argv=None) -> None:
                 L += [f"- **{k}**: " + fmt({kk: v[kk] for kk in (KEYS if k != "random" else v) if kk in v})]
             L += [""]
         print(f"{sym}: ok")
-    hyp["multiple_testing"]["M_executed"] = int(hyp["multiple_testing"].get("M_executed", 0)) + executed
-    yaml.safe_dump(hyp, open(hyp_path, "w"), sort_keys=False, allow_unicode=True)
     out = Path(a.root) / cfg["paths"]["reports"]; out.mkdir(parents=True, exist_ok=True)
+    log_path = out / "executions.yaml"
+    log = yaml.safe_load(open(log_path)) if log_path.exists() else {"executions": []}
+    log["executions"].append({"phase": 5, "date": str(pd.Timestamp.utcnow().date()), "symbols": a.symbols,
+                              "timeframes": a.timeframes, "configs_executed": executed, "test_used": False})
+    yaml.safe_dump(log, open(log_path, "w"), sort_keys=False, allow_unicode=True)
     (out / "02_phase5_candidates.md").write_text("\n".join(L))
     print(f"informe: {out / '02_phase5_candidates.md'} | configuraciones ejecutadas: {executed}")
 

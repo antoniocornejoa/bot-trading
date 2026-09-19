@@ -55,6 +55,23 @@ hypotheses:
       tp_atr: [2.0, 3.0]
     n_configs: 24
 
+  - id: H-A2
+    family: A_trend_following
+    strategy: ma_momentum
+    registered_at: 2026-09-19
+    status: registered
+    registered_after: "Fase 5, con el test aún cerrado; motivo: el benchmark MA200 igualó o superó a H-A1 en train/validation"
+    rationale: >
+      Variante más simple de A: exposición larga mientras el cierre está por encima de una media
+      lenta, con stop de volatilidad. Menos parámetros que Donchian; si captura la misma prima
+      de tendencia con menos grados de libertad, es preferible por robustez.
+    expected_profile: {win_rate: "15-30 %", payoff: "> 5", trades_per_year_per_asset: "15-40 (4h)"}
+    fails_when: rangos con cruces repetidos de la media (whipsaw); costes por rotación
+    grid:                        # 3 x 3 = 9
+      n: [100, 150, 200]
+      atr_mult: [2.0, 3.0, 4.0]
+    n_configs: 9
+
   - id: H-H1
     family: H_regime
     strategy: filter_layer
@@ -108,5 +125,5 @@ hypotheses:
 
 # M total de configuraciones que cuentan para la corrección (benchmarks no cuentan):
 multiple_testing:
-  M_registered: 52    # 24 + 24 + 4
-  M_executed: 0       # se actualiza al ejecutar
+  M_registered: 61    # 24 + 24 + 9 + 4
+  # Las ejecuciones se anotan en research/reports/executions.yaml (el registro no se reescribe).

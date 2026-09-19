@@ -30,6 +30,8 @@ class BuyAndHold(Strategy):
 
 
 class MA200Momentum(Strategy):
+    """Largo si cierre > SMA(n); salida si cierre < SMA(n) o stop de volatilidad. Con los
+    valores por defecto es el benchmark; con rejilla es la hipótesis H-A2 (familia A)."""
     name = "ma_momentum"
 
     @classmethod
