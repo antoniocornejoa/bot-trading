@@ -15,8 +15,19 @@ meta:
   timeframes: [4h, 1d]          # 1h solo si el ratio coste/movimiento medido lo permite
   cost_scenario_for_decisions: base
   split: {train: 0.60, validation: 0.20, test: 0.20}
-  test_opened: false             # se pone a true UNA vez, al final de Fase 6, y se anota la fecha
-  test_opened_at: null
+  test_opened: true              # abierto UNA vez al final de la Fase 6
+  test_opened_at: 2026-09-19
+  test_candidates: [H-A2, H-A1]  # H-A2 es la decisión; H-A1 se evalúa por estar registrada, sin cambiar la decisión
+  test_decision_rule: >
+    Escrita ANTES de abrir el test. H-A2 (ma_momentum, 4h) en BTC y ETH se considera validada
+    si en el tramo de test: expectancy OOS > 0 en escenario base y pesimista, PF >= 1.3 y
+    drawdown <= 20 % con 0,5 % de riesgo. SOL queda fuera de la decisión: no pasó el walk-forward
+    (eficiencia 0,02 y 76 % del beneficio en una ventana). Si el test falla, no se reoptimiza:
+    se documenta y se vuelve a la Fase 2 con hipótesis nuevas evaluables solo en datos futuros.
+  walkforward_summary_before_test: >
+    H-A2 4h, 474 op OOS agrupadas, expectancy 0,53 R, t 3,0 (t mensual 2,7), PF 2,15,
+    coste/beneficio 0,14, positivo en ventanas bajistas; pesimista 0,42 R. Sensibilidad sin
+    cambio de signo. DSR pasa dentro de familia y falla en el supuesto conservador.
 
 hypotheses:
   - id: H-A1

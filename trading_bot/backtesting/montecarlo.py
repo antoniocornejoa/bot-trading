@@ -54,9 +54,13 @@ def simulate(trades_df: pd.DataFrame, initial_capital: float = 500.0, n_paths: i
             rng.shuffle(r)
     r = np.where(r > 0, r * avg_win_mult, r * avg_loss_mult) - extra_cost_pct / 100.0
     if win_rate_shift > 0:
+        # las ganadoras "perdidas" se convierten en una pérdida típica (el stop acota la pérdida),
+        # no en una pérdida del tamaño de la ganancia (irreal para colas derechas gordas)
         wins = np.flatnonzero(r > 0)
+        losses = r[r < 0]
+        typical_loss = losses.mean() if len(losses) else -abs(r).mean()
         flip = rng.choice(wins, max(1, int(len(wins) * win_rate_shift)), replace=False) if len(wins) else []
-        r[flip] = -np.abs(r[flip])
+        r[flip] = typical_loss
     n = n_trades or len(r)
     if n == 0:
         raise ValueError("sin operaciones")
@@ -94,9 +98,17 @@ STRESS = {
     "avg_win_-10%": {"avg_win_mult": 0.9},
     "avg_loss_+10%": {"avg_loss_mult": 1.1},
     "slippage_x2": {"extra_cost_pct": 0.06},
-    "drop_best_10%": {"drop_best_pct": 0.10},
+    "drop_best_5%": {"drop_best_pct": 0.05},
     "blocks_5": {"block": 5},
 }
+
+
+def profit_concentration(trades_df: pd.DataFrame, top_pct: float = 0.10) -> float:
+    """Fracción del beneficio neto total aportada por el top X % de operaciones (dependencia de outliers)."""
+    pnl = np.sort(trades_df["pnl"].to_numpy(float))[::-1]
+    k = max(1, int(len(pnl) * top_pct))
+    total = pnl.sum()
+    return float(pnl[:k].sum() / total) if total > 0 else np.nan
 
 
 def stress_table(trades_df: pd.DataFrame, **kw) -> pd.DataFrame:

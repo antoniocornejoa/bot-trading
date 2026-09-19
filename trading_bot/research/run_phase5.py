@@ -142,7 +142,7 @@ def main(argv=None) -> None:
     out = Path(a.root) / cfg["paths"]["reports"]; out.mkdir(parents=True, exist_ok=True)
     log_path = out / "executions.yaml"
     log = yaml.safe_load(open(log_path)) if log_path.exists() else {"executions": []}
-    log["executions"].append({"phase": 5, "date": str(pd.Timestamp.utcnow().date()), "symbols": a.symbols,
+    log["executions"].append({"phase": 5, "date": str(pd.Timestamp.now("UTC").date()), "symbols": a.symbols,
                               "timeframes": a.timeframes, "configs_executed": executed, "test_used": False})
     yaml.safe_dump(log, open(log_path, "w"), sort_keys=False, allow_unicode=True)
     (out / "02_phase5_candidates.md").write_text("\n".join(L))

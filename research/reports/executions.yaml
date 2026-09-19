@@ -10,3 +10,73 @@ executions:
   - 1d
   configs_executed: 342
   test_used: false
+- phase: 6
+  date: '2026-09-19'
+  hypotheses:
+  - H-A1
+  - H-A2
+  symbols:
+  - BTCUSDT
+  - ETHUSDT
+  - SOLUSDT
+  timeframes:
+  - 4h
+  test_used: false
+- phase: 6
+  date: '2026-09-19'
+  hypotheses:
+  - H-A1
+  - H-A2
+  symbols:
+  - BTCUSDT
+  - ETHUSDT
+  - SOLUSDT
+  timeframes:
+  - 4h
+  test_used: false
+- phase: 6
+  date: '2026-09-19'
+  hypotheses:
+  - H-A2
+  symbols:
+  - BTCUSDT
+  - ETHUSDT
+  - SOLUSDT
+  timeframes:
+  - 4h
+  test_used: false
+- phase: 6
+  date: '2026-09-19'
+  hypotheses:
+  - H-A1
+  - H-A2
+  symbols:
+  - BTCUSDT
+  - ETHUSDT
+  - SOLUSDT
+  timeframes:
+  - 4h
+  test_used: false
+- phase: 6
+  date: '2026-09-19'
+  hypotheses:
+  - H-A2
+  - H-A1
+  symbols:
+  - BTCUSDT
+  - ETHUSDT
+  - SOLUSDT
+  timeframes:
+  - 4h
+  test_used: true
+- phase: 6
+  date: '2026-09-19'
+  hypotheses:
+  - H-A2
+  symbols:
+  - BTCUSDT
+  - ETHUSDT
+  - SOLUSDT
+  timeframes:
+  - 4h
+  test_used: true
