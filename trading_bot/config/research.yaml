@@ -1,0 +1,24 @@
+# Configuración de la investigación (Fases 1-9). No contiene claves ni nada de ejecución en vivo.
+paths:
+  raw: data_store/raw          # ZIP/CSV tal cual se descargan
+  parquet: data_store/parquet  # velas 1m limpias por símbolo y mercado
+  reports: research/reports    # informes generados
+
+universe:
+  spot: [BTCUSDT, ETHUSDT, SOLUSDT]
+  futures: [BTCUSDT, ETHUSDT]   # perpetuos USDT-M, solo para costes/features
+  start: "2017-08"              # Binance spot arranca 2017-08; los símbolos posteriores se saltan meses sin fichero
+
+timeframes: [15m, 1h, 4h, 1d]
+
+# Escenarios de coste (porcentajes por LADO; ver research/00_MARCO_INVESTIGACION.md §6.2)
+costs:
+  optimistic: {fee_pct: 0.075, half_spread_pct: 0.005, slippage_pct: 0.010, impact_coef: 0.0}
+  base:       {fee_pct: 0.100, half_spread_pct: 0.010, slippage_pct: 0.030, impact_coef: 0.05}
+  pessimistic: {fee_pct: 0.100, half_spread_pct: 0.030, slippage_pct: 0.100, impact_coef: 0.10}
+
+exchange_limits:
+  # Binance spot: notional mínimo y paso de lote (se refrescan desde la API antes de operar)
+  BTCUSDT: {min_notional: 5.0, lot_step: 0.00001}
+  ETHUSDT: {min_notional: 5.0, lot_step: 0.0001}
+  SOLUSDT: {min_notional: 5.0, lot_step: 0.001}

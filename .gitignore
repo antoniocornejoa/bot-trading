@@ -17,3 +17,6 @@ venv/
 
 # Sistema
 .DS_Store
+
+# Datos descargados del sistema cuantitativo (solo se suben los informes)
+data_store/

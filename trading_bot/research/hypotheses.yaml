@@ -1,0 +1,112 @@
+# =====================================================================
+#  REGISTRO DE HIPÓTESIS (Fase 2)
+# =====================================================================
+#  Regla: nada se prueba sin estar aquí ANTES, con su justificación económica y sus
+#  condiciones de fallo. El número total de configuraciones (M) alimenta la corrección
+#  por múltiples pruebas (Deflated Sharpe, §6.5 del marco). Una hipótesis registrada
+#  después de ver el conjunto de test solo se evalúa sobre datos posteriores a su fecha.
+#
+#  Estados: registered -> in_sample -> validated -> oos_tested -> accepted | rejected
+#  Nunca se vuelve de oos_tested a in_sample para "ajustar": eso es una hipótesis nueva.
+# =====================================================================
+
+meta:
+  universe: [BTCUSDT, ETHUSDT, SOLUSDT]
+  timeframes: [4h, 1d]          # 1h solo si el ratio coste/movimiento medido lo permite
+  cost_scenario_for_decisions: base
+  split: {train: 0.60, validation: 0.20, test: 0.20}
+  test_opened: false             # se pone a true UNA vez, al final de Fase 6, y se anota la fecha
+  test_opened_at: null
+
+hypotheses:
+  - id: H-A1
+    family: A_trend_following
+    strategy: donchian_trend
+    registered_at: 2026-09-19
+    status: registered
+    rationale: >
+      Momentum de series temporales: reacción insuficiente y flujos escalonados hacen que
+      una ruptura de máximo de N barras con tendencia de fondo tenga continuación esperada
+      positiva. Documentado en futuros desde 1980 y en cripto desde 2014.
+    expected_profile: {win_rate: "35-45 %", payoff: "> 2", trades_per_year_per_asset: "8-25"}
+    fails_when: rangos prolongados (whipsaw); costes altos; después de subidas verticales (entrada tardía)
+    grid:                        # rejilla GRUESA a propósito: 3 x 2 x 2 x 2 = 24 configuraciones
+      n_entry: [20, 55, 100]
+      n_exit: [10, 20]
+      atr_mult: [2.0, 3.0]
+      ema_filter: [100, 200]
+    n_configs: 24
+
+  - id: H-G1
+    family: G_pullback
+    strategy: trend_pullback
+    registered_at: 2026-09-19
+    status: registered
+    rationale: >
+      En tendencia confirmada, los retrocesos cortos son sobre-reacción de participantes de
+      corto plazo. Comprar el retroceso combina la prima de tendencia con la de reversión y
+      evita entrar en extensión. A priori mejor equilibrio win rate / payoff que A.
+    expected_profile: {win_rate: "50-60 %", payoff: "1.2-1.6", trades_per_year_per_asset: "20-60"}
+    fails_when: el retroceso es el inicio de un cambio de tendencia; filtro lento en rangos
+    grid:                        # 2 x 3 x 2 x 2 = 24
+      ema_slow: [50, 100]
+      rsi_entry: [20, 25, 30]
+      stop_atr: [1.5, 2.0]
+      tp_atr: [2.0, 3.0]
+    n_configs: 24
+
+  - id: H-H1
+    family: H_regime
+    strategy: filter_layer
+    registered_at: 2026-09-19
+    status: registered
+    rationale: >
+      Las familias A y G tienen regímenes favorables distintos. Un clasificador simple
+      (pendiente de MA200; percentil de volatilidad realizada 30 barras) debería mejorar la
+      expectativa neta al desactivar entradas en el régimen desfavorable de cada una.
+    applies_to: [H-A1, H-G1]
+    grid:                        # 2 x 2 = 4 variantes de filtro por estrategia base
+      vol_percentile_cap: [0.8, 1.0]     # 1.0 = sin filtro de volatilidad
+      trend_slope_min: [0.0, 0.001]      # 0.0 = sin filtro de pendiente
+    n_configs: 4
+    note: se evalúa sobre la mejor meseta de H-A1 y H-G1, no sobre toda la rejilla (evita multiplicar M)
+
+  - id: B-C1
+    family: C_mean_reversion
+    strategy: rsi2_benchmark
+    registered_at: 2026-09-19
+    status: registered
+    role: benchmark
+    rationale: Reversión a corto plazo clásica (RSI2 < 10 con precio > MA200), referencia de la sección 23 del brief.
+    grid: {rsi_entry: [10], exit_rsi: [70]}
+    n_configs: 1
+
+  - id: B-MOM
+    family: benchmark
+    strategy: ma200_momentum
+    registered_at: 2026-09-19
+    status: registered
+    role: benchmark
+    rationale: Largo si cierre > MA200, plano si no. Referencia mínima de tendencia.
+    n_configs: 1
+
+  - id: B-RAND
+    family: benchmark
+    strategy: random_same_frequency
+    registered_at: 2026-09-19
+    status: registered
+    role: benchmark
+    rationale: 1000 réplicas con la misma frecuencia y holding que la candidata; define la distribución nula.
+    n_configs: 1
+
+  - id: B-BH
+    family: benchmark
+    strategy: buy_and_hold
+    status: registered
+    role: benchmark
+    n_configs: 1
+
+# M total de configuraciones que cuentan para la corrección (benchmarks no cuentan):
+multiple_testing:
+  M_registered: 52    # 24 + 24 + 4
+  M_executed: 0       # se actualiza al ejecutar
