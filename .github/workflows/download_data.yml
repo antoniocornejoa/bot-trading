@@ -6,6 +6,9 @@ name: Descargar datos de mercado
 # repositorio los Parquet de 1h/4h/1d, los informes de validación y el informe de mercado.
 
 on:
+  # También se dispara al cambiar data_store/TRIGGER (permite lanzarlo con un simple push).
+  push:
+    paths: ["data_store/TRIGGER"]
   workflow_dispatch:
     inputs:
       start:
@@ -36,7 +39,7 @@ jobs:
       - run: pip install -r trading_bot/requirements.txt
 
       - name: Velas spot
-        run: python -m trading_bot.data.binance_vision --markets spot --intervals ${{ github.event.inputs.intervals }} --start ${{ github.event.inputs.start }}
+        run: python -m trading_bot.data.binance_vision --markets spot --intervals ${{ github.event.inputs.intervals || '15m 1h 4h 1d' }} --start ${{ github.event.inputs.start || '2017-08' }}
 
       - name: Perpetuos y funding (BTC, ETH)
         run: python -m trading_bot.data.binance_vision --markets futures funding --symbols BTCUSDT ETHUSDT --intervals 1h 4h 1d --start 2019-09
