@@ -53,6 +53,22 @@ Resultados:
 
 `data_store/` está en `.gitignore`: los datos no se suben, solo los informes.
 
+## App de pruebas demo (desde el móvil)
+
+`trading_bot/app.py` es un panel Streamlit con tres pestañas: backtest con tus parámetros,
+demo del bot completo sobre un tramo histórico (motor de riesgo y kill switch incluidos) e
+informes de investigación. Usa los datos ya guardados en el repositorio, sin acceso a Binance.
+
+Despliegue gratuito en Streamlit Community Cloud, una sola vez y desde el teléfono:
+
+1. Entra en https://share.streamlit.io e inicia sesión con GitHub.
+2. *Create app* → *Deploy a public app from GitHub*.
+3. Repository `antoniocornejoa/bot-trading` · Branch `claude/tradingview-direct-connection-66rgpm` · Main file path `trading_bot/app.py`.
+4. *Deploy*. En 2-3 minutos tienes una URL `https://….streamlit.app`; añádela a la pantalla de inicio.
+
+La app se duerme si nadie la usa y despierta sola al abrirla. Cada vez que el workflow de datos
+suba velas nuevas a la rama, la app las verá al reiniciarse. Localmente: `streamlit run trading_bot/app.py`.
+
 ## Bot de paper / live
 
 ```bash
