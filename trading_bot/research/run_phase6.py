@@ -101,7 +101,7 @@ def monthly_t(tdf: pd.DataFrame) -> tuple[float, float, int]:
     """t-stat sobre retornos MENSUALES agregados de todos los símbolos (unidad de independencia
     más honesta que la operación: BTC y ETH correlacionan 0,8 y operan a la vez)."""
     from scipy import stats
-    m = (tdf["pnl"] / tdf["equity_at_entry"]).groupby(pd.to_datetime(tdf["exit_time"]).dt.to_period("M")).sum()
+    m = (tdf["pnl"] / tdf["equity_at_entry"]).groupby(pd.to_datetime(tdf["exit_time"]).dt.tz_localize(None).dt.to_period("M")).sum()
     if len(m) < 3:
         return np.nan, np.nan, len(m)
     t, p = stats.ttest_1samp(m.to_numpy(float), 0)

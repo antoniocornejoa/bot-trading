@@ -6,8 +6,8 @@ Operaciones del walk-forward cuya entrada cae en el tramo de test, solo BTC y ET
 
 |             |   ops |   BTC |   ETH |   win_rate_% |   expectancy_R |        t |   t_mensual |   meses |      PF |   DD_%_riesgo0.5 |   retorno_%_riesgo0.5 |   coste/bruto | desde      | hasta      |
 |:------------|------:|------:|------:|-------------:|---------------:|---------:|------------:|--------:|--------:|-----------------:|----------------------:|--------------:|:-----------|:-----------|
-| base        |   127 |    59 |    68 |      12.5984 |       0.24065  | 0.915984 |    0.746566 |      19 | 1.45928 |         -11.8988 |               14.9743 |      0.316662 | 2024-12-21 | 2026-08-24 |
-| pessimistic |   116 |    59 |    57 |      12.931  |       0.181958 | 0.739213 |    0.572069 |      17 | 1.34645 |         -11.3098 |               10.0475 |      0.488076 | 2024-12-21 | 2026-08-24 |
+| base        |   127 |    59 |    68 |      12.5984 |       0.224459 | 0.852869 |    0.691437 |      19 | 1.4025  |         -12.8042 |              13.7921  |      0.349425 | 2024-12-21 | 2026-08-24 |
+| pessimistic |   116 |    59 |    57 |      12.931  |       0.179574 | 0.729202 |    0.565232 |      17 | 1.34501 |         -11.4333 |               9.90541 |      0.48892  | 2024-12-21 | 2026-08-24 |
 
 ## Regla de decisión
 
@@ -17,4 +17,4 @@ Operaciones del walk-forward cuya entrada cae en el tramo de test, solo BTC y ET
 
 **Resultado: H-A2 pasa el test.**
 
-Aviso: el tramo de test tiene menos de dos años y unas 150 operaciones; el t-stat en test por sí solo no alcanza significación. Lo que se afirma es que la ventaja medida en walk-forward no desapareció fuera de muestra, no que esté demostrada más allá de toda duda. La siguiente evidencia independiente es el paper trading (Fase 12).
+Aviso: el tramo de test tiene menos de dos años y unas 130 operaciones; el t-stat en test por sí solo no alcanza significación. Lo que se afirma es que la ventaja medida en walk-forward no desapareció fuera de muestra, no que esté demostrada más allá de toda duda. La siguiente evidencia independiente es el paper trading (Fase 12).

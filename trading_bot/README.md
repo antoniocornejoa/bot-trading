@@ -11,7 +11,12 @@ El bot antiguo de `src/` sigue intacto como referencia.
 | 3 Datos | `data/binance_vision.py`, `data/kraken.py`, `data/validation.py`, `data/store.py` | listo; **se ejecuta en tu equipo** |
 | 1 Mercados | `research/market_profile.py` | listo; necesita los datos de la fase 3 |
 | 4 Backtester | `backtesting/engine.py`, `costs.py`, `metrics.py`, `leakage.py`, `grid.py`, `walkforward.py`, `sensitivity.py`, `montecarlo.py`, `dsr.py` | completo y testeado |
-| 5 Candidatas | `strategies/trend.py`, `strategies/pullback.py`, `strategies/benchmarks.py` | implementadas, sin evaluar |
+| 5 Candidatas | `research/run_phase5.py` → `research/reports/02_*.md` | ejecutada: pullback rechazado; tendencia lenta (H-A1, H-A2) sobrevive en BTC/ETH 4h |
+| 6 Walk-forward | `research/run_phase6.py` → `03_*.md` | ejecutada; test abierto una vez con regla previa; veredicto en `05_test_verdict_H-A2.md` |
+| 8-9 Robustez y Monte Carlo | `research/run_phase8_9.py` → `04_*.md` | ejecutadas; riesgo elegido 0,5 % |
+| 10 Riesgo | `risk/engine.py`, `risk/gates.py` | escalones por DD, kill switch, gates de capital |
+| 12-13 Paper / live | `execution/`, `portfolio/`, `monitoring/`, `run.py`, `config/live.yaml` | bot con exchange simulado, testnet y real; replay coincide con el motor |
+| 11, 14, 15 | portfolio, código final, manual | pendientes |
 
 ## Descarga desde la nube (sin ordenador)
 
@@ -47,6 +52,19 @@ Resultados:
 - `research/reports/01_market_profile.md`: **súbelo al repositorio** (o pégalo en la conversación). Con él se decide el timeframe y se abre la Fase 5.
 
 `data_store/` está en `.gitignore`: los datos no se suben, solo los informes.
+
+## Bot de paper / live
+
+```bash
+export BINANCE_API_KEY=... BINANCE_API_SECRET=...          # claves de la TESTNET para paper
+python -m trading_bot.run --mode paper                      # bucle cada 5 min (config/live.yaml)
+python -m trading_bot.run --mode paper --once               # un ciclo, para cron
+python -m trading_bot.run --mode replay --start 2025-06-01  # repetición histórica con exchange simulado
+```
+
+`live` exige tres confirmaciones explícitas (PAPER_TRADING=false, i_understand_live_risk=true y
+LIVE_CONFIRM=yes). Estado en `data_store/bot_state.sqlite`; alertas por Telegram si existen
+TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID.
 
 ## Tests
 

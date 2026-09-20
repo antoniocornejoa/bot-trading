@@ -1,0 +1,26 @@
+# Configuración del bot de paper / live. Las claves van en variables de entorno, nunca aquí:
+#   BINANCE_API_KEY, BINANCE_API_SECRET  (testnet para paper; cuenta real para live)
+#   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID (opcional, alertas)
+PAPER_TRADING: true          # true = testnet de Binance (dinero de mentira). El bot arranca así.
+i_understand_live_risk: false  # para live: PAPER_TRADING=false Y esto en true Y variable LIVE_CONFIRM=yes
+
+symbols: [BTC/USDT, ETH/USDT]   # SOL excluido: no pasó el walk-forward
+timeframe: 4h
+strategy: ma_momentum            # H-A2; configuración más elegida por el walk-forward (7 de 25 ventanas)
+params: {n: 200, atr_mult: 2.0, atr_n: 14}
+
+risk:
+  risk_pct: 0.5                  # Monte Carlo: DD mediano −9 %, p95 −15 %, ruina 0,1 %
+  max_positions: 2
+  max_total_risk_pct: 1.0
+  daily_loss_limit_pct: 2.0
+  weekly_loss_limit_pct: 4.0
+  dd_halt: 0.18
+  dd_kill: 0.25
+  max_consecutive_errors: 5
+  max_spread_pct: 0.15
+  max_bar_move_pct: 15.0
+
+poll_seconds: 300                # vigila stops cada 5 min; las señales solo cambian al cerrar una vela de 4h
+db_path: data_store/bot_state.sqlite
+capital_level: paper

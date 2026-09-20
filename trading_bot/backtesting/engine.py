@@ -5,6 +5,8 @@ Reglas (todas deliberadamente conservadoras):
   - Dentro de una barra el orden asumido es apertura → extremos → cierre. Si el stop y el
     objetivo se tocan en la misma barra, se asume que se ejecutó el STOP.
   - Si la apertura ya está por debajo del stop (gap), el stop se ejecuta a la apertura.
+  - En la propia vela de entrada también se vigila el stop (y el objetivo): si el mínimo de la
+    vela de entrada toca el stop, la operación se cierra ahí mismo, como haría el bot en vivo.
   - El stop dinámico (trail) calculado en t se aplica desde t+1 y solo puede subir.
   - Tamaño: fracción fija del capital arriesgada por operación, dividida por la distancia
     del stop; redondeo al paso de lote; se rechaza si no llega al nocional mínimo o al
@@ -147,6 +149,11 @@ def run(df: pd.DataFrame, signals: pd.DataFrame, costs: CostScenario, *, initial
                         "tp": fill + tp_dist[i - 1] if not np.isnan(tp_dist[i - 1]) else np.nan,
                         "risk_usd": qty * sd, "entry_i": i, "signal_i": i - 1, "equity_at_entry": equity_now,
                     }
+                    # stop / objetivo dentro de la vela de entrada (stop primero, regla conservadora)
+                    if lo[i] <= pos["stop"]:
+                        close_position(i, pos["stop"], "stop", True)
+                    elif not np.isnan(pos["tp"]) and h[i] >= pos["tp"]:
+                        close_position(i, pos["tp"], "take_profit", False)
         equity[i] = cash + (pos["qty"] * c[i] if pos is not None else 0.0)
 
     if pos is not None:
