@@ -24,3 +24,4 @@ data_store/raw/
 data_store/parquet/**/*_klines_1m.parquet
 data_store/parquet/**/*_klines_5m.parquet
 data_store/parquet/**/*_klines_15m.parquet
+trading_bot/web/dist/

@@ -1,0 +1,367 @@
+<title>Laboratorio Cuant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f4f6f9; --surface:#ffffff; --surface-2:#eef1f5; --line:#dde2e9; --line-strong:#c5ccd6;
+  --ink:#151a21; --ink-2:#4f5966; --muted:#7b8593;
+  --accent:#2a78d6; --accent-ink:#ffffff; --accent-soft:#e3eefb;
+  --s1:#2a78d6; --s2:#eb6834; --good:#1a7f1a; --bad:#d63b3a; --warn:#b06e00; --warn-soft:#fff4e0;
+  --shadow:0 1px 2px rgba(20,26,33,.06),0 4px 14px rgba(20,26,33,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111418; --surface:#181c22; --surface-2:#1f242c; --line:#2a313b; --line-strong:#3a424e;
+    --ink:#eef1f5; --ink-2:#b5bdc8; --muted:#7f8896;
+    --accent:#3987e5; --accent-ink:#0b1220; --accent-soft:#1a2a40;
+    --s1:#3987e5; --s2:#d95926; --good:#4cbd5a; --bad:#ef6b6a; --warn:#e0a33b; --warn-soft:#2b2411;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111418; --surface:#181c22; --surface-2:#1f242c; --line:#2a313b; --line-strong:#3a424e;
+  --ink:#eef1f5; --ink-2:#b5bdc8; --muted:#7f8896;
+  --accent:#3987e5; --accent-ink:#0b1220; --accent-soft:#1a2a40;
+  --s1:#3987e5; --s2:#d95926; --good:#4cbd5a; --bad:#ef6b6a; --warn:#e0a33b; --warn-soft:#2b2411;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.45;-webkit-text-size-adjust:100%}
+.mono,.num,td.num,th.num,.kpi-v,.tt{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header.top h1{margin:0;font-size:17px;font-weight:600;letter-spacing:.01em}
+header.top .sub{color:var(--ink-2);font-size:12.5px}
+.wrap{padding-inline:16px;padding-block:16px 40px;max-width:1240px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media(min-width:960px){.wrap{grid-template-columns:320px minmax(0,1fr);align-items:start}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.controls{padding:14px 14px 16px;display:flex;flex-direction:column;gap:14px}
+@media(min-width:960px){.controls{position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px)}}
+fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+legend{padding:0;margin-bottom:6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--ink-2)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+input,select{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;min-width:0;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,.seg label:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+input[type=range]{padding:0;background:transparent;border:0;accent-color:var(--accent)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg label{display:block;text-align:center;padding:7px 4px;font-size:12.5px;color:var(--ink-2);cursor:pointer;background:var(--surface-2);border-right:1px solid var(--line)}
+.seg label:last-child{border-right:0}
+.seg input{position:absolute;opacity:0;width:0;height:0}
+.seg input:checked+span{color:var(--accent);font-weight:600}
+.seg label:has(input:checked){background:var(--accent-soft)}
+.toggle{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink)}
+.toggle input{width:auto;accent-color:var(--accent)}
+.params{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{font-size:11.5px;color:var(--muted);margin:0}
+button.run{font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:11px 14px;cursor:pointer;width:100%}
+button.run:active{transform:translateY(1px)}
+.results{display:flex;flex-direction:column;gap:14px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:600px){.kpis{grid-template-columns:repeat(5,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi-l{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-v{font-size:20px;font-weight:500;line-height:1.2}
+.kpi-s{font-size:11.5px;color:var(--ink-2)}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.card{padding:12px 14px 14px}
+.card h2{margin:0 0 2px;font-size:13.5px;font-weight:600}
+.card .cap{margin:0 0 10px;font-size:12px;color:var(--ink-2)}
+.chart-wrap{position:relative}
+.chart{width:100%;height:auto;display:block;touch-action:pan-y}
+.tt{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line-strong);border-radius:6px;padding:6px 8px;font-size:11.5px;color:var(--ink);box-shadow:var(--shadow);white-space:nowrap;transform:translate(-50%,-110%);left:0;top:0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-top:6px}
+.legend i{display:inline-block;width:14px;height:2px;vertical-align:middle;margin-right:6px;border-radius:1px}
+.notes{display:flex;flex-direction:column;gap:8px}
+.note{border-left:3px solid var(--line-strong);background:var(--surface-2);padding:8px 10px;border-radius:0 8px 8px 0;font-size:12.5px;color:var(--ink-2)}
+.note.warn{border-left-color:var(--warn);background:var(--warn-soft);color:var(--ink)}
+.note.bad{border-left-color:var(--bad)}
+.tbl{overflow-x:auto;max-height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:12px;min-width:640px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:var(--surface-2);color:var(--ink-2);font-weight:500;font-size:11px;letter-spacing:.04em;text-transform:uppercase;z-index:1}
+th.num,td.num{text-align:right}
+tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 14px}
+details summary{cursor:pointer;padding:12px 0;font-weight:600;font-size:13.5px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details summary::after{content:"+";color:var(--muted);font-weight:400}
+details[open] summary::after{content:"–"}
+details .body{padding:0 0 14px;color:var(--ink-2);font-size:13px}
+details .body p{margin:0 0 8px;max-width:68ch}
+.ctx-tbl{overflow-x:auto}
+.ctx-tbl table{min-width:520px}
+a{color:var(--accent)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <h1>Laboratorio Cuant</h1>
+  <span class="sub">Simulación sobre velas reales de Binance, 2017 a ago-2026. No opera con dinero.</span>
+</header>
+
+<div class="wrap">
+  <aside class="panel controls" aria-label="Configuración">
+    <fieldset>
+      <legend>Mercado</legend>
+      <div class="row">
+        <label class="f">Activo<select id="symbol"><option>BTCUSDT</option><option>ETHUSDT</option><option>SOLUSDT</option></select></label>
+        <label class="f">Velas<select id="tf"><option value="4h">4 horas</option><option value="1d">1 día</option></select></label>
+      </div>
+      <div class="row">
+        <label class="f">Desde<input type="date" id="from"></label>
+        <label class="f">Hasta<input type="date" id="to"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Estrategia</legend>
+      <label class="f">Familia<select id="strategy"></select></label>
+      <div class="params" id="params"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Riesgo y capital</legend>
+      <label class="f"><span>Riesgo por operación: <b class="mono" id="riskLbl">0.5 %</b></span>
+        <input type="range" id="risk" min="0.25" max="3" step="0.25" value="0.5"></label>
+      <p class="hint">0,5 % es el nivel elegido por el Monte Carlo. A 1 % la probabilidad de tocar el kill switch sube al 12 %.</p>
+      <div class="row">
+        <label class="f">Capital inicial (USD)<input type="number" id="capital" min="50" step="50" value="500"></label>
+        <label class="f">Kill switch (drawdown %)<input type="number" id="ddKill" min="10" max="50" step="5" value="25"></label>
+      </div>
+      <label class="toggle"><input type="checkbox" id="botMode" checked> Modo bot: escalones por drawdown y kill switch</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Costes</legend>
+      <div class="seg" role="radiogroup" aria-label="Escenario de costes">
+        <label><input type="radio" name="scen" value="optimistic"><span>Optimista</span></label>
+        <label><input type="radio" name="scen" value="base" checked><span>Base</span></label>
+        <label><input type="radio" name="scen" value="pessimistic"><span>Pesimista</span></label>
+      </div>
+      <p class="hint" id="scenHint"></p>
+    </fieldset>
+
+    <button class="run" id="run" type="button">Ejecutar simulación</button>
+  </aside>
+
+  <main class="results">
+    <section class="kpis" id="kpis" aria-live="polite"></section>
+
+    <section class="panel card">
+      <h2>Equity</h2>
+      <p class="cap"><span id="eqCap"></span> <label class="toggle" style="display:inline-flex;margin-left:8px"><input type="checkbox" id="logScale"> escala log</label></p>
+      <div class="chart-wrap"><svg class="chart" id="eqChart" viewBox="0 0 800 300" role="img" aria-label="Curva de equity de la estrategia frente a comprar y mantener"></svg><div class="tt" id="eqTip" hidden></div></div>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Estrategia</span><span><i style="background:var(--s2)"></i>Comprar y mantener</span></div>
+    </section>
+
+    <section class="panel card">
+      <h2>Drawdown</h2>
+      <p class="cap">Caída desde el máximo anterior. La estrategia arriesga una fracción fija por operación; comprar y mantener arriesga todo el capital.</p>
+      <div class="chart-wrap"><svg class="chart" id="ddChart" viewBox="0 0 800 200" role="img" aria-label="Drawdown de la estrategia y de comprar y mantener"></svg><div class="tt" id="ddTip" hidden></div></div>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Estrategia</span><span><i style="background:var(--s2)"></i>Comprar y mantener</span></div>
+    </section>
+
+    <section class="notes" id="notes"></section>
+
+    <section class="panel card">
+      <h2>Operaciones</h2>
+      <p class="cap" id="trCap"></p>
+      <div class="tbl"><table id="trades"><thead><tr>
+        <th>Entrada</th><th>Salida</th><th>Motivo</th><th class="num">Precio ent.</th><th class="num">Precio sal.</th><th class="num">Cantidad</th><th class="num">R</th><th class="num">PnL USD</th><th class="num">Velas</th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <details>
+      <summary>Qué dice la investigación sobre esta estrategia</summary>
+      <div class="body">
+        <p>La estrategia de tendencia por media móvil (H-A2) en 4 horas es la única candidata que sobrevivió al proceso completo: rejilla en train y validation, walk-forward con re-selección cada 6 meses, sensibilidad, Monte Carlo y un tramo de test cerrado que se abrió una sola vez con la regla de decisión escrita antes.</p>
+        <div class="ctx-tbl"><table>
+          <thead><tr><th>Tramo</th><th class="num">Operaciones</th><th class="num">Expectancy</th><th class="num">Profit factor</th><th class="num">Win rate</th><th class="num">Coste / bruto</th></tr></thead>
+          <tbody>
+            <tr><td>Walk-forward 2019 a 2024, 3 activos</td><td class="num">479</td><td class="num">0,54 R</td><td class="num">2,16</td><td class="num">16,5 %</td><td class="num">14 %</td></tr>
+            <tr><td>Test nov-2024 a ago-2026, BTC y ETH</td><td class="num">127</td><td class="num">0,22 R</td><td class="num">1,40</td><td class="num">12,6 %</td><td class="num">35 %</td></tr>
+          </tbody></table></div>
+        <p style="margin-top:10px">La ventaja bajó a menos de la mitad en el tramo de test y ahí el t-stat no es significativo por sí solo. Lo que se afirma es que la ventaja no desapareció fuera de muestra, no que esté demostrada. La siguiente evidencia es el paper trading.</p>
+        <p><b>Cuidado con este laboratorio.</b> El tramo posterior a noviembre de 2024 ya se usó como test. Ajustar parámetros mirando ese tramo hasta que quede bonito es sobreajuste: sirve para entender cómo se comporta el sistema y qué se siente en un drawdown, no para buscar la combinación que mejor rindió en el pasado.</p>
+        <p>Código, datos e informes completos: <a href="https://github.com/antoniocornejoa/bot-trading/tree/claude/tradingview-direct-connection-66rgpm" target="_blank" rel="noopener">repositorio bot-trading</a>.</p>
+      </div>
+    </details>
+  </main>
+</div>
+
+<script>
+/*__ENGINE__*/
+</script>
+<script>
+const DATA = /*__DATA__*/;
+</script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const fmtD = (ms) => { const d = new Date(ms); return d.toISOString().slice(0, 10); };
+  const fmtDT = (ms, tf) => { const d = new Date(ms); const s = d.toISOString(); return tf === "1d" ? s.slice(0, 10) : s.slice(0, 10) + " " + s.slice(11, 16); };
+  const nf = (x, d = 2) => Number.isFinite(x) ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d }) : "–";
+  const pct = (x, d = 1) => Number.isFinite(x) ? (x > 0 ? "+" : "") + nf(x, d) + " %" : "–";
+  const sign = (x) => x > 0 ? "pos" : x < 0 ? "neg" : "";
+
+  const SCEN_HINT = {
+    optimistic: "Comisión 0,075 % con BNB, spread y slippage mínimos. Solo para ver el techo.",
+    base: "Comisión 0,1 %, medio spread 0,01 %, slippage 0,03 % más impacto según volumen. Es el escenario que decide.",
+    pessimistic: "Spread y slippage triplicados, stops con doble slippage. Si aquí no sobrevive, no sobrevive.",
+  };
+
+  // ---------- controles
+  const stratSel = $("strategy");
+  for (const [k, s] of Object.entries(QE.STRATEGIES)) { const o = document.createElement("option"); o.value = k; o.textContent = s.label; stratSel.appendChild(o); }
+  function renderParams() {
+    const s = QE.STRATEGIES[stratSel.value], box = $("params"); box.innerHTML = "";
+    for (const [k, v] of Object.entries(s.defaults)) {
+      const l = document.createElement("label"); l.className = "f"; l.title = s.help[k] || "";
+      l.innerHTML = `<span>${k}</span>`;
+      const i = document.createElement("input"); i.type = "number"; i.id = "p_" + k; i.value = v; i.step = Number.isInteger(v) ? 1 : 0.5; i.min = Number.isInteger(v) ? 2 : 0.5;
+      l.appendChild(i); box.appendChild(l);
+    }
+  }
+  function readParams() {
+    const s = QE.STRATEGIES[stratSel.value], p = {};
+    for (const [k, v] of Object.entries(s.defaults)) { const x = parseFloat($("p_" + k).value); p[k] = Number.isInteger(v) ? Math.max(2, Math.round(x)) : x; }
+    return p;
+  }
+  function setDateBounds() {
+    const rows = DATA[$("symbol").value][$("tf").value];
+    const lo = fmtD(rows[0][0] * 3600000), hi = fmtD(rows[rows.length - 1][0] * 3600000);
+    for (const id of ["from", "to"]) { $(id).min = lo; $(id).max = hi; }
+    if (!$("from").value || $("from").value < lo || $("from").value > hi) $("from").value = lo > "2022-01-01" ? lo : "2022-01-01";
+    if (!$("to").value || $("to").value > hi || $("to").value < lo) $("to").value = hi;
+  }
+  const scen = () => document.querySelector('input[name="scen"]:checked').value;
+
+  // ---------- gráficos SVG
+  function chart(svgId, tipId, series, ts, opts) {
+    const svg = $(svgId), tip = $(tipId);
+    const W = Math.max(320, Math.round(svg.getBoundingClientRect().width || 800));
+    const H = svgId === "eqChart" ? (W < 600 ? 240 : 300) : (W < 600 ? 170 : 200);
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const padL = 54, padR = 16, padT = 12, padB = 26;
+    const n = ts.length; if (!n) { svg.innerHTML = ""; return; }
+    const log = !!opts.log;
+    let ymin = Infinity, ymax = -Infinity;
+    for (const s of series) for (const v of s.v) { if (Number.isFinite(v)) { if (v < ymin) ymin = v; if (v > ymax) ymax = v; } }
+    if (opts.zeroTop) ymax = 0;
+    if (ymin === ymax) { ymin -= 1; ymax += 1; }
+    const ty = (v) => log ? Math.log(v) : v; const Y0 = ty(ymin), Y1 = ty(ymax);
+    const x = (i) => padL + (W - padL - padR) * i / Math.max(n - 1, 1);
+    const y = (v) => padT + (H - padT - padB) * (1 - (ty(v) - Y0) / (Y1 - Y0 || 1));
+    const ticks = []; const nt = 4;
+    for (let k = 0; k <= nt; k++) { const v = log ? Math.exp(Y0 + (Y1 - Y0) * k / nt) : ymin + (ymax - ymin) * k / nt; ticks.push(v); }
+    let g = "";
+    for (const v of ticks) g += `<line x1="${padL}" x2="${W - padR}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(--line)" stroke-width="1"/><text x="${padL - 6}" y="${(y(v) + 3.5).toFixed(1)}" text-anchor="end" font-size="10.5" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${opts.fmtY(v)}</text>`;
+    const nx = Math.min(5, n); const seen = new Set();
+    for (let k = 0; k < nx; k++) { const i = Math.round((n - 1) * k / Math.max(nx - 1, 1)); const lab = fmtD(ts[i]).slice(0, 7); if (seen.has(lab)) continue; seen.add(lab);
+      g += `<text x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="${k === 0 ? "start" : k === nx - 1 ? "end" : "middle"}" font-size="10.5" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${lab}</text>`; }
+    g += `<line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" stroke="var(--line-strong)" stroke-width="1"/>`;
+    for (const s of series) {
+      let d = "", first = true;
+      for (let i = 0; i < n; i++) { const v = s.v[i]; if (!Number.isFinite(v)) continue; d += (first ? "M" : "L") + x(i).toFixed(1) + " " + y(v).toFixed(1); first = false; }
+      if (s.area) { const base = y(opts.zeroTop ? 0 : ymin).toFixed(1); g += `<path d="${d} L${x(n - 1).toFixed(1)} ${base} L${x(0).toFixed(1)} ${base} Z" fill="${s.color}" fill-opacity="0.12" stroke="none"/>`; }
+      g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.width || 2}" stroke-linejoin="round" stroke-linecap="round"/>`;
+      const last = s.v[n - 1]; if (Number.isFinite(last)) g += `<circle cx="${x(n - 1).toFixed(1)}" cy="${y(last).toFixed(1)}" r="3" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`;
+    }
+    g += `<g id="${svgId}-cross" style="display:none"><line id="${svgId}-vl" y1="${padT}" y2="${H - padB}" stroke="var(--ink-2)" stroke-width="1" stroke-dasharray="3 3"/>` +
+      series.map((s, k) => `<circle id="${svgId}-c${k}" r="4" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`).join("") + `</g>`;
+    svg.innerHTML = g;
+    const cross = $(svgId + "-cross"), vl = $(svgId + "-vl");
+    const move = (ev) => {
+      const r = svg.getBoundingClientRect(); const px = (ev.clientX - r.left) / r.width * W;
+      let i = Math.round((px - padL) / (W - padL - padR) * (n - 1)); i = Math.max(0, Math.min(n - 1, i));
+      cross.style.display = ""; vl.setAttribute("x1", x(i)); vl.setAttribute("x2", x(i));
+      series.forEach((s, k) => { const c = $(svgId + "-c" + k); const v = s.v[i]; if (Number.isFinite(v)) { c.style.display = ""; c.setAttribute("cx", x(i)); c.setAttribute("cy", y(v)); } else c.style.display = "none"; });
+      tip.hidden = false; tip.innerHTML = `<b>${fmtDT(ts[i], opts.tf)}</b><br>` + series.map(s => `${s.name}: ${opts.fmtY(s.v[i])}`).join("<br>");
+      tip.style.left = (x(i) / W * r.width) + "px"; tip.style.top = (Math.min(...series.map(s => Number.isFinite(s.v[i]) ? y(s.v[i]) : H)) / H * r.height) + "px";
+    };
+    svg.onpointermove = move; svg.onpointerdown = move;
+    svg.onpointerleave = () => { cross.style.display = "none"; tip.hidden = true; };
+  }
+
+  // ---------- ejecución
+  let last = null;
+  function runSim() {
+    const symbol = $("symbol").value, tf = $("tf").value, rows = DATA[symbol][tf];
+    const full = QE.toBars(rows);
+    const fromMs = Date.parse($("from").value + "T00:00:00Z"), toMs = Date.parse($("to").value + "T23:59:59Z");
+    let startI = full.ts.findIndex(t => t >= fromMs); if (startI < 0) startI = 0;
+    let endI = full.ts.length; while (endI > 0 && full.ts[endI - 1] > toMs) endI--;
+    if (endI - startI < 30) { $("notes").innerHTML = `<div class="note bad">El periodo elegido tiene menos de 30 velas. Amplíalo.</div>`; return; }
+    const params = readParams(), sc = QE.SCENARIOS[scen()];
+    const sig = QE.STRATEGIES[stratSel.value].generate(full, params);
+    const bars = QE.slice(full, startI, endI), sigS = QE.sliceSig(sig, startI, endI);
+    const capital = Math.max(50, parseFloat($("capital").value) || 500), risk = parseFloat($("risk").value);
+    const ddKill = Math.max(0.1, (parseFloat($("ddKill").value) || 25) / 100);
+    const bot = $("botMode").checked ? { ddKill, ddHalt: Math.min(0.18, ddKill - 0.02), tiers: [[0.08, 1.0], [0.12, 0.5], [0.18, 0.25]], events: [] } : null;
+    const res = QE.run(bars, sigS, sc, { initialCapital: capital, riskPct: risk, ...QE.LIMITS[symbol], bot });
+    const bpy = QE.BARS_PER_YEAR[tf], m = QE.metrics(res, bpy);
+    const bh = bars.c.map(v => capital * v / bars.c[0]);
+    let pk = -Infinity; const bhdd = bh.map(v => { if (v > pk) pk = v; return v / pk - 1; });
+    const bhRet = 100 * (bh[bh.length - 1] / capital - 1), bhDD = 100 * Math.min(...bhdd);
+    last = { res, m, bars, bh, bhdd, tf, capital, bot };
+
+    const k = [
+      ["Retorno", pct(m.totalReturn), sign(m.totalReturn), `Comprar y mantener ${pct(bhRet)}`],
+      ["CAGR", pct(m.cagr), sign(m.cagr), `${nf(bars.ts.length / bpy, 1)} años`],
+      ["Drawdown máx.", pct(m.maxDD), "neg", `Comprar y mantener ${pct(bhDD)}`],
+      ["Operaciones", String(m.trades), "", `${nf(m.tradesPerYear, 0)} por año`],
+      ["Expectancy", Number.isFinite(m.expR) ? nf(m.expR, 2) + " R" : "–", sign(m.expR), Number.isFinite(m.tStat) ? `t = ${nf(m.tStat, 2)}` : ""],
+      ["Profit factor", Number.isFinite(m.pf) ? nf(m.pf, 2) : m.pf === Infinity ? "∞" : "–", m.pf > 1 ? "pos" : m.trades ? "neg" : "", ""],
+      ["Win rate", Number.isFinite(m.winRate) ? nf(m.winRate, 1) + " %" : "–", "", `payoff ${nf(m.payoff, 2)}`],
+      ["Sharpe", nf(m.sharpe, 2), sign(m.sharpe), `Sortino ${nf(m.sortino, 2)}`],
+      ["Coste / bruto", Number.isFinite(m.costRatio) ? nf(100 * m.costRatio, 0) + " %" : m.trades ? "–" : "–", m.costRatio > 0.35 ? "neg" : "", `${nf(m.costsTotal || 0, 2)} USD en costes`],
+      ["Racha de pérdidas", String(m.maxLosses), "", `racha de ganancias ${m.maxWins}`],
+    ];
+    $("kpis").innerHTML = k.map(([l, v, cls, s]) => `<div class="kpi"><span class="kpi-l">${l}</span><span class="kpi-v ${cls}">${v}</span><span class="kpi-s">${s}</span></div>`).join("");
+
+    $("eqCap").textContent = `${symbol} · velas de ${tf === "1d" ? "1 día" : "4 horas"} · ${fmtD(bars.ts[0])} a ${fmtD(bars.ts[bars.ts.length - 1])} · costes ${sc.name === "base" ? "base" : sc.name === "optimistic" ? "optimistas" : "pesimistas"}`;
+    drawCharts();
+
+    const notes = [];
+    if (res.killed) notes.push(`<div class="note bad"><b>Kill switch activado.</b> El drawdown superó el ${nf(ddKill * 100, 0)} %: el bot cerró la posición y dejó de operar hasta revisión manual. Así se comportaría en vivo.</div>`);
+    if (bot && res.skippedRisk) notes.push(`<div class="note">${res.skippedRisk} señales no se ejecutaron por los escalones de riesgo: con drawdown superior al 18 % el bot no abre posiciones nuevas.</div>`);
+    if (res.skippedMin) notes.push(`<div class="note">${res.skippedMin} señales no se ejecutaron por no llegar al mínimo de orden de Binance (5 USD). Con ${nf(capital, 0)} USD y ${risk} % de riesgo esto pasa en la realidad.</div>`);
+    if (m.trades && m.winRate > 75) notes.push(`<div class="note warn">Win rate por encima del 75 %. Según el marco, esto exige auditar fugas de información, stops demasiado anchos o muestra pequeña antes de creérselo.</div>`);
+    if (m.trades && m.trades < 30) notes.push(`<div class="note warn">Menos de 30 operaciones: cualquier métrica de este tramo es ruido. Amplía el periodo.</div>`);
+    if (m.trades && Number.isFinite(m.costRatio) && m.costRatio > 0.35) notes.push(`<div class="note warn">Los costes se llevan más del 35 % del beneficio bruto: no queda margen para un slippage real algo peor que el asumido.</div>`);
+    $("notes").innerHTML = notes.join("");
+
+    const tb = $("trades").querySelector("tbody"); const rowsHtml = [];
+    for (let i = res.trades.length - 1; i >= 0; i--) { const t = res.trades[i];
+      rowsHtml.push(`<tr><td class="num">${fmtDT(t.entryTs, tf)}</td><td class="num">${fmtDT(t.exitTs, tf)}</td><td><span class="chip">${{ stop: "stop", signal: "señal", take_profit: "objetivo", end: "fin del periodo", kill: "kill switch" }[t.reason] || t.reason}</span></td><td class="num">${nf(t.entryPrice, 2)}</td><td class="num">${nf(t.exitPrice, 2)}</td><td class="num">${nf(t.qty, 5)}</td><td class="num ${sign(t.r)}">${nf(t.r, 2)}</td><td class="num ${sign(t.pnl)}">${nf(t.pnl, 2)}</td><td class="num">${t.barsHeld}</td></tr>`); }
+    tb.innerHTML = rowsHtml.join("");
+    $("trCap").textContent = res.trades.length ? `${res.trades.length} operaciones, la más reciente primero. Precios ya incluyen spread y slippage; el PnL descuenta comisiones.` : "Sin operaciones en este periodo.";
+  }
+  function drawCharts() {
+    if (!last) return;
+    const { res, m, bars, bh, bhdd, tf, capital } = last; const log = $("logScale").checked;
+    chart("eqChart", "eqTip", [{ name: "Estrategia", v: res.equity, color: "var(--s1)" }, { name: "Comprar y mantener", v: bh, color: "var(--s2)" }], bars.ts,
+      { fmtY: (v) => nf(v, 0), tf, log });
+    chart("ddChart", "ddTip", [{ name: "Estrategia", v: m.dd.map(v => 100 * v), color: "var(--s1)", area: true }, { name: "Comprar y mantener", v: bhdd.map(v => 100 * v), color: "var(--s2)", width: 1.5 }], bars.ts,
+      { fmtY: (v) => nf(v, 1) + " %", tf, zeroTop: true });
+  }
+
+  // ---------- eventos
+  stratSel.addEventListener("change", () => { renderParams(); runSim(); });
+  $("symbol").addEventListener("change", () => { setDateBounds(); runSim(); });
+  $("tf").addEventListener("change", () => { setDateBounds(); runSim(); });
+  $("risk").addEventListener("input", () => { $("riskLbl").textContent = nf(parseFloat($("risk").value), 2) + " %"; });
+  $("risk").addEventListener("change", runSim);
+  for (const id of ["from", "to", "capital", "ddKill", "botMode"]) $(id).addEventListener("change", runSim);
+  for (const r of document.querySelectorAll('input[name="scen"]')) r.addEventListener("change", () => { $("scenHint").textContent = SCEN_HINT[scen()]; runSim(); });
+  $("logScale").addEventListener("change", drawCharts);
+  $("run").addEventListener("click", runSim);
+  $("params").addEventListener("change", runSim);
+  window.addEventListener("resize", () => { if (last) drawCharts(); });
+
+  renderParams(); setDateBounds(); $("scenHint").textContent = SCEN_HINT[scen()]; runSim();
+})();
+</script>
